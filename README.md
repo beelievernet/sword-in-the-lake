@@ -16,3 +16,5 @@ Live at: https://swordinthelake.beeliever.net (Cloudflare Pages, connected to th
   previous build.
 - Pushes use the per-repo deploy key `github_beelievernet_sword_in_the_lake`
   over ssh.github.com:443, same arrangement as the salvage-bots repo.
+
+Push-to-deploy pipeline test line, 2026-11-16 16:36 EST. If you can read this on the live site, automatic deploys work.
