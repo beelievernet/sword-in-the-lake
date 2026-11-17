@@ -145,7 +145,7 @@
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
           <div><b>👾 Enemies</b><br>Slimes each move in their own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. New in the Field: <b>rock-spitters</b> walk a straight line, pause, and spit a rock at you — face the shot with your shield up-front to deflect it.</div>
-          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Trees only block at the trunk and rocks at their core, so you can slip behind canopies and slide along obstacles. But trees or rocks planted touching each other form one solid barrier — go around the outside of the clump, never between them.</div>
+          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Trees only block at the trunk and rocks at their core, and their corners are rounded — press diagonally and you'll ease around them and off the end of a tree wall smoothly, no catching, no lurch. But trees or rocks planted touching each other form one solid barrier — go around the outside of the clump, never between them.</div>
         </div>
         <button class="cta" id="startBtn">▶ &nbsp;Start Adventure</button>
         <button class="subbtn" id="installBtn2">📲 Add to Home Screen (PWA)</button>
@@ -392,9 +392,19 @@ function tryMove(ent,dx,dy,r){
 //    no seams inside a group, so tree lines and clusters block off areas,
 //    while the group's outer edges keep the forgiving slide/corner feel.
 //  - Water and the world-boundary ring stay full-tile solid.
-//  - Movement resolves per axis (slide along obstacles), plus a corner assist:
-//    a clip of a few pixels on a corner nudges the player around it.
-const PLAYER_FOOT_HW=9, PLAYER_FOOT_TOP=3, PLAYER_FOOT_H=12, CORNER_ASSIST=7;
+//  - Tree/rock/cactus cores are ROUNDED rectangles, not sharp boxes: their
+//    corners are quarter-circles (see rectsOverlapRounded), so a player
+//    pressing diagonally against a corner meets a curve and slides around
+//    it continuously, from any approach angle, instead of catching on a
+//    point. Interior corners of a merged group are covered by the
+//    neighbouring tile's rect, so only the group's OUTER corners round.
+//  - Movement is sub-stepped and resolves per axis (slide along obstacles).
+//    There is NO instant corner teleport: the old assist shifted the player
+//    up to 7px in a single frame, which read as a snag-then-burst at the
+//    end of a tree wall. Any steering around a corner now happens through
+//    ordinary sub-steps whose total length never exceeds the requested
+//    movement for that frame (see tryMovePlayer).
+const PLAYER_FOOT_HW=9, PLAYER_FOOT_TOP=3, PLAYER_FOOT_H=12;
 function playerFootRect(x,y){ return {x:x-PLAYER_FOOT_HW, y:y+PLAYER_FOOT_TOP, w:PLAYER_FOOT_HW*2, h:PLAYER_FOOT_H}; }
 // Contiguous-obstacle seam sealing: trees, rocks and cacti are "group solids".
 // Isolated, each collides only at its core (below). But when two group solids
@@ -403,8 +413,8 @@ function playerFootRect(x,y){ return {x:x-PLAYER_FOOT_HW, y:y+PLAYER_FOOT_TOP, w
 // core, so there is no seam or pinhole between them — horizontally, vertically,
 // or mixed (tree next to rock). A diagonally adjacent neighbour adds a small
 // filler square at the shared tile corner only, sealing the diagonal seam.
-// The group's OUTER perimeter is untouched: cores stay inset there, sliding
-// and corner assist work exactly as before around the outside of the group.
+// The group's OUTER perimeter keeps the inset cores, so sliding and the
+// rounded-corner steering work around the outside of the group.
 // Obstacles separated by real open space are not a group and never merge.
 const GROUP_SOLID={1:true,2:true,7:true};
 const CORE_EDGES={ // core rect edges as offsets inside a tile, per obstacle type
@@ -432,13 +442,17 @@ function tileSolidRects(tx,ty){
     if(groupSolidAt(tx-1,ty)) l=X-TILE+CORE_EDGES[grid[ty][tx-1]].r;
     if(groupSolidAt(tx,ty+1)) b=Y+TILE+CORE_EDGES[grid[ty+1][tx]].t;
     if(groupSolidAt(tx,ty-1)) t=Y-TILE+CORE_EDGES[grid[ty-1][tx]].b;
-    const rects=[{x:l,y:t,w:r-l,h:b-t}];
+    // Rounded outer corners: radius is capped by the rect's own half-size,
+    // so an isolated trunk (12 wide) rounds by 6, a rock core by 9, and a
+    // long merged wall rounds only at its ends (its long sides stay flat).
+    const rad=Math.min(9,(r-l)/2,(b-t)/2);
+    const rects=[{x:l,y:t,w:r-l,h:b-t,rad:rad}];
     // Diagonal neighbours: a small filler at the shared corner only.
     const DIAG=13;
-    if(groupSolidAt(tx+1,ty+1)) rects.push({x:X+TILE-DIAG,y:Y+TILE-DIAG,w:DIAG*2,h:DIAG*2});
-    if(groupSolidAt(tx-1,ty+1)) rects.push({x:X-DIAG,y:Y+TILE-DIAG,w:DIAG*2,h:DIAG*2});
-    if(groupSolidAt(tx+1,ty-1)) rects.push({x:X+TILE-DIAG,y:Y-DIAG,w:DIAG*2,h:DIAG*2});
-    if(groupSolidAt(tx-1,ty-1)) rects.push({x:X-DIAG,y:Y-DIAG,w:DIAG*2,h:DIAG*2});
+    if(groupSolidAt(tx+1,ty+1)) rects.push({x:X+TILE-DIAG,y:Y+TILE-DIAG,w:DIAG*2,h:DIAG*2,rad:6});
+    if(groupSolidAt(tx-1,ty+1)) rects.push({x:X-DIAG,y:Y+TILE-DIAG,w:DIAG*2,h:DIAG*2,rad:6});
+    if(groupSolidAt(tx+1,ty-1)) rects.push({x:X+TILE-DIAG,y:Y-DIAG,w:DIAG*2,h:DIAG*2,rad:6});
+    if(groupSolidAt(tx-1,ty-1)) rects.push({x:X-DIAG,y:Y-DIAG,w:DIAG*2,h:DIAG*2,rad:6});
     return rects;
   }
   return [{x:X,y:Y,w:TILE,h:TILE}];
@@ -449,39 +463,79 @@ function buildingSolidRects(){
   return buildings.map(b=>({x:b.x+8, y:b.y+36, w:b.wpx-16, h:b.hpx-36}));
 }
 function rectsOverlap(a,b){ return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y; }
+// Foot AABB vs a rounded rectangle: the rounded rect is its central cross
+// (vertical strip + horizontal strip) plus a quarter-circle at each corner.
+// The foot collides only if it touches one of those parts, so near a corner
+// the solid effectively curves away and diagonal pressure slides around it.
+function rectsOverlapRounded(foot,b){
+  if(!rectsOverlap(foot,b)) return false;
+  const rad=b.rad||0; if(rad<=0) return true;
+  // Central cross: overlap with either full-length strip is a real hit.
+  if(rectsOverlap(foot,{x:b.x+rad,y:b.y,w:b.w-rad*2,h:b.h})) return true;
+  if(rectsOverlap(foot,{x:b.x,y:b.y+rad,w:b.w,h:b.h-rad*2})) return true;
+  // Corner circles: hit if the foot's closest point is inside a corner disc.
+  const cx=[b.x+rad,b.x+b.w-rad], cy=[b.y+rad,b.y+b.h-rad];
+  for(let i=0;i<2;i++) for(let j=0;j<2;j++){
+    const px=Math.max(foot.x,Math.min(cx[i],foot.x+foot.w));
+    const py=Math.max(foot.y,Math.min(cy[j],foot.y+foot.h));
+    if(Math.hypot(cx[i]-px,cy[j]-py)<rad) return true;
+  }
+  return false;
+}
+function solidRectHit(foot,r){ return r.rad?rectsOverlapRounded(foot,r):rectsOverlap(foot,r); }
 function collidesPlayerAt(nx,ny){
   const foot=playerFootRect(nx,ny);
   if(foot.x<0||foot.y<0||foot.x+foot.w>WORLD_W||foot.y+foot.h>WORLD_H) return true;
-  const tx0=Math.floor(foot.x/TILE), tx1=Math.floor((foot.x+foot.w-1)/TILE);
-  const ty0=Math.floor(foot.y/TILE), ty1=Math.floor((foot.y+foot.h-1)/TILE);
+  // Check a 1-tile margin around the foot: merged group rects and diagonal
+  // fillers extend up to a tile beyond their own tile, so a neighbouring
+  // tile's rect can reach the foot even when the foot is not inside it.
+  const tx0=Math.floor(foot.x/TILE)-1, tx1=Math.floor((foot.x+foot.w-1)/TILE)+1;
+  const ty0=Math.floor(foot.y/TILE)-1, ty1=Math.floor((foot.y+foot.h-1)/TILE)+1;
   for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
+    if(tx<0||ty<0||tx>=COLS||ty>=ROWS) continue;
     const rects=tileSolidRects(tx,ty);
-    for(let i=0;i<rects.length;i++) if(rectsOverlap(foot,rects[i])) return true;
+    for(let i=0;i<rects.length;i++) if(solidRectHit(foot,rects[i])) return true;
   }
   const brs=buildingSolidRects();
   for(let i=0;i<brs.length;i++) if(rectsOverlap(foot,brs[i])) return true;
   return false;
 }
+// Movement: sub-stepped axis sliding with NO positional teleport.
+// The frame's displacement is split into sub-steps of at most ~2px. Each
+// sub-step tries the full step, then each axis alone (sliding). If a
+// diagonal step is deadlocked on a rounded corner (both axes blocked),
+// the sub-step vector is ROTATED toward the tangent in small increments
+// and the first free rotation is taken — a rotation keeps the vector's
+// length, so a sub-step never moves the player farther than that sub-step
+// itself, and a whole frame never moves farther than the requested
+// (dx,dy) length. Corners are therefore rounded over several frames at
+// normal speed: no snag-teleport, and no burst when a wall ends — the
+// frame the wall releases, the player simply takes the same size step
+// they have been taking all along.
 function tryMovePlayer(dx,dy){
-  if(dx!==0){
-    if(!collidesPlayerAt(player.x+dx,player.y)) player.x+=dx;
-    else { // corner assist on X: nudge up/down a few px around the corner
-      const signs=dy>0?[1,-1]:[-1,1]; let done=false;
-      for(let mag=2;mag<=CORNER_ASSIST&&!done;mag++) for(let s=0;s<2&&!done;s++){
-        const shift=signs[s]*mag;
-        if(!collidesPlayerAt(player.x,player.y+shift) && !collidesPlayerAt(player.x+dx,player.y+shift)){ player.y+=shift; player.x+=dx; done=true; }
+  if(dx===0&&dy===0) return;
+  const dist=Math.hypot(dx,dy);
+  const steps=Math.max(1,Math.ceil(dist/2));
+  const sx=dx/steps, sy=dy/steps;
+  for(let s=0;s<steps;s++){
+    if(!collidesPlayerAt(player.x+sx,player.y+sy)){ player.x+=sx; player.y+=sy; continue; }
+    let moved=false;
+    if(sx!==0 && !collidesPlayerAt(player.x+sx,player.y)){ player.x+=sx; moved=true; }
+    else if(sy!==0 && !collidesPlayerAt(player.x,player.y+sy)){ player.y+=sy; moved=true; }
+    if(!moved && sx!==0 && sy!==0){
+      // Deadlocked on a corner: steer the sub-step around it. Rotations
+      // preserve length exactly, so this cannot add speed — it only
+      // changes direction, gradually, one sub-step at a time.
+      const base=Math.atan2(sy,sx), len=Math.hypot(sx,sy);
+      const offs=[0.6,-0.6,1.1,-1.1,1.55,-1.55];
+      for(let k=0;k<offs.length;k++){
+        const a=base+offs[k], vx=Math.cos(a)*len, vy=Math.sin(a)*len;
+        // Only accept a rotation that still makes progress along the input.
+        if(vx*sx+vy*sy<=0) continue;
+        if(!collidesPlayerAt(player.x+vx,player.y+vy)){ player.x+=vx; player.y+=vy; moved=true; break; }
       }
     }
-  }
-  if(dy!==0){
-    if(!collidesPlayerAt(player.x,player.y+dy)) player.y+=dy;
-    else { // corner assist on Y: nudge left/right a few px around the corner
-      const signs=dx>0?[1,-1]:[-1,1]; let done=false;
-      for(let mag=2;mag<=CORNER_ASSIST&&!done;mag++) for(let s=0;s<2&&!done;s++){
-        const shift=signs[s]*mag;
-        if(!collidesPlayerAt(player.x+shift,player.y) && !collidesPlayerAt(player.x+shift,player.y+dy)){ player.x+=shift; player.y+=dy; done=true; }
-      }
-    }
+    // If nothing was free, this sub-step is simply lost (head-on block).
   }
   player.x=Math.max(20,Math.min(WORLD_W-20,player.x)); player.y=Math.max(20,Math.min(WORLD_H-20,player.y));
 }
