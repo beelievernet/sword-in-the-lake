@@ -11,6 +11,7 @@
 <meta name="color-scheme" content="dark"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗡️</text></svg>"/>
 <title>Sword in the Lake</title>
+<link rel="manifest" href="manifest.webmanifest"/>
 <style>
   :root{--bg:#0f2417;--panel:#162f1e;--gold:#f6c453;--gold2:#e8a91c;--green:#3ecf5a;--ink:#fff8dc;--muted:#b9c9b0;--red:#ff4757;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -106,7 +107,6 @@
   .btnrow button.gold{background:var(--gold);color:#1a1400;border:0}
   @media (max-width:560px){#minimap{width:96px;height:68px;right:8px;top:8px}}
 </style>
-<link rel="manifest" href="manifest.webmanifest"/>
 </head>
 <body>
 <div id="app">
@@ -138,7 +138,8 @@
         <p>The overworld has grown: a <b>town</b> with a shop and villagers, the <b>Lost Woods</b>, open <b>Hyrule Field</b>, the sandy <b>Gerudo Drylands</b>, and <b>Lake Hylia's shore</b> — all connected by dirt roads. A banner names each zone as you enter it.</p>
         <div class="how">
           <div><b>📱 On phone</b><br>Touch anywhere on the left side — a floating stick appears under your thumb. Gold button swings the sword; the round ITEM button uses whatever you've equipped from your bag.</div>
-          <div><b>⌨️ On desktop</b><br>WASD / arrows, <b>Space</b> sword, <b>K</b> use equipped item, <b>L</b> bag, <b>E</b> shop.</div>
+          <div><b>🎯 Free-angle attacks</b><br>You attack at the exact angle you're moving — diagonals and everything in between, not just up/down/left/right. Stop moving and you keep facing that angle, so you can line up a swing, boomerang, or arrow and fire standing still.</div>
+          <div><b>⌨️ On desktop</b><br>WASD / arrows (hold two keys for a diagonal aim), <b>Space</b> sword, <b>K</b> use equipped item, <b>L</b> bag, <b>E</b> shop.</div>
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
           <div><b>👾 Enemies</b><br>Each slime moves in its own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. Sword hits flash, pause the game a beat, and knock them flying.</div>
@@ -407,7 +408,7 @@ function cutTallAt(x,y,radius){
 }
 
 // ---------- Entities ----------
-const player={x:13*TILE+20,y:13*TILE+20,r:13,speed:175,dir:"down",hp:6,maxHp:6,attackT:0,attackCd:0,invuln:0,rustleT:0};
+const player={x:13*TILE+20,y:13*TILE+20,r:13,speed:175,dir:"down",aim:Math.PI/2,hp:6,maxHp:6,attackT:0,attackCd:0,invuln:0,rustleT:0};
 let rupeesCount=0, kills=0, started=false, shopOpen=false, lastTime=0;
 let grass=[], enemies=[], pickups=[], particles=[], floaters=[], projectiles=[], npcs=[];
 let hasBoomerang=false, hasBow=false, arrows=0, heartBought=false, weaponCd=0, equippedItem=null, bagOpen=false, tuningOpen=false, hitPauseT=0;
@@ -501,13 +502,25 @@ function cutGrassAt(x,y,radius){
   grass.forEach(g=>{ if(g.alive && Math.hypot(g.x-x,g.y-y)<radius){ g.alive=false; g.timer=TUNING.grassRegrowSec; burst(g.x,g.y,"#4ade80",9); burst(g.x,g.y,"#166534",5); sfx.pop(); if(Math.random()<0.9) dropLoot(g.x,g.y,false); } });
   cutTallAt(x,y,radius+6);
 }
-function dirVec(){ return player.dir==="up"?{x:0,y:-1}:player.dir==="down"?{x:0,y:1}:player.dir==="left"?{x:-1,y:0}:{x:1,y:0}; }
+function aimVec(){ return {x:Math.cos(player.aim), y:Math.sin(player.aim)}; }
+function dirVec(){ return aimVec(); }
+function angleDiff(a,b){ let d=a-b; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return d; }
+function syncDirFromAim(){ const ax=Math.cos(player.aim), ay=Math.sin(player.aim); if(Math.abs(ax)>Math.abs(ay)) player.dir=ax>0?"right":"left"; else player.dir=ay>0?"down":"up"; }
 function doAttack(){
   if(player.attackCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen) return;
   player.attackCd=TUNING.swordCooldownSec; player.attackT=0.20; sfx.swing();
-  const v=dirVec(), hx=player.x+v.x*44, hy=player.y+v.y*44;
-  cutGrassAt(hx,hy,38);
-  enemies.forEach(en=>{ if(en.alive && en.immuneT<=0 && Math.hypot(en.x-hx,en.y-hy)<46) hurtEnemy(en,1,Math.atan2(en.y-player.y,en.x-player.x),{sword:true,kb:TUNING.knockbackForce}); });
+  const ang=player.aim, v=aimVec();
+  // Cut grass across the whole swing arc, not just a single point in front
+  [-0.55,0,0.55].forEach(off=>{ const a=ang+off; cutGrassAt(player.x+Math.cos(a)*42, player.y+Math.sin(a)*42, 34); });
+  enemies.forEach(en=>{
+    if(!en.alive || en.immuneT>0) return;
+    const dx=en.x-player.x, dy=en.y-player.y, dist=Math.hypot(dx,dy);
+    if(dist>64) return;
+    // Free-angle arc: hit anything within reach inside a ~130° cone around the aim,
+    // plus anything point-blank (so a swing while brushing past an enemy still connects)
+    const inArc = Math.abs(angleDiff(Math.atan2(dy,dx), ang)) < 1.14;
+    if(inArc || dist<27) hurtEnemy(en,1,Math.atan2(dy,dx),{sword:true,kb:TUNING.knockbackForce});
+  });
 }
 function doEquippedItem(){
   if(!started||player.hp<=0) return;
@@ -518,13 +531,13 @@ function doEquippedItem(){
 function doBoomerang(){
   if(!hasBoomerang||weaponCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen) { if(started&&!hasBoomerang) showToast("🪃 Buy the boomerang at the town shop — 💎60"); return; }
   if(projectiles.some(p=>p.type==="boom")) return;
-  weaponCd=0.4; const v=dirVec(); sfx.whoosh();
+  weaponCd=0.4; const v=aimVec(); sfx.whoosh();
   projectiles.push({type:"boom",x:player.x,y:player.y,vx:v.x*430,vy:v.y*430,dist:0,stage:"out",spin:0,hit:new Set()});
 }
 function doBow(){
   if(!hasBow||weaponCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen){ if(started&&!hasBow) showToast("🏹 Buy the bow at the town shop — 💎120"); return; }
   if(arrows<=0){ showToast("Out of arrows! The shop sells 10 for 💎20"); sfx.denied(); return; }
-  weaponCd=0.38; arrows--; updateInv(); const v=dirVec(); sfx.twang();
+  weaponCd=0.38; arrows--; updateInv(); const v=aimVec(); sfx.twang();
   projectiles.push({type:"arrow",x:player.x+v.x*16,y:player.y+v.y*16,vx:v.x*470,vy:v.y*470,dist:0,ang:Math.atan2(v.y,v.x)});
 }
 
@@ -651,7 +664,7 @@ document.getElementById("tuningImport").addEventListener("click",importTuning);
 document.getElementById("tuningReset").addEventListener("click",()=>{ Object.assign(TUNING,TUNING_DEFAULTS); saveTuning(); buildTuningUI(); showToast("⚙️ Tuning reset to defaults"); sfx.pop(); });
 
 function resetGame(){
-  player.x=13*TILE+20; player.y=13*TILE+20; player.hp=player.maxHp; player.invuln=0;
+  player.x=13*TILE+20; player.y=13*TILE+20; player.hp=player.maxHp; player.invuln=0; player.aim=Math.PI/2; player.dir="down";
   pickups=[]; particles=[]; floaters=[]; projectiles=[];
   tallCells.forEach(c=>{ c.alive=true; c.timer=0; });
   spawnGrass(); spawnEnemies(); spawnStarterRupees(); updateHearts();
@@ -726,7 +739,7 @@ function update(dt){
   let ix=joyVec.x, iy=joyVec.y;
   if(keys["a"]||keys["arrowleft"]) ix-=1; if(keys["d"]||keys["arrowright"]) ix+=1; if(keys["w"]||keys["arrowup"]) iy-=1; if(keys["s"]||keys["arrowdown"]) iy+=1;
   const len=Math.hypot(ix,iy); if(len>1){ix/=len;iy/=len;}
-  if(len>0.1){ if(Math.abs(ix)>Math.abs(iy)) player.dir=ix>0?"right":"left"; else player.dir=iy>0?"down":"up"; }
+  if(len>0.1){ player.aim=Math.atan2(iy,ix); syncDirFromAim(); }
   const inTall=!!tallAt(player.x,player.y+8);
   const spd=TUNING.playerSpeed*(inTall?TUNING.tallGrassFactor:1);
   tryMove(player, ix*spd*dt, iy*spd*dt, player.r);
@@ -910,9 +923,11 @@ function drawPlayer(camX,camY,time){
   if(player.invuln>0 && Math.floor(time*14)%2===0) ctx.globalAlpha=.45;
   ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+14,13,5,0,0,Math.PI*2); ctx.fill();
   if(player.attackT>0){
-    ctx.save(); ctx.translate(sx,sy); let ang=0; if(player.dir==="right")ang=0; if(player.dir==="down")ang=Math.PI/2; if(player.dir==="left")ang=Math.PI; if(player.dir==="up")ang=-Math.PI/2;
-    const prog=1-player.attackT/0.20; ctx.rotate(ang-0.9+prog*1.8); ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=5; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(34,0); ctx.stroke(); ctx.strokeStyle="#92400e"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(16,0); ctx.stroke();
-    ctx.strokeStyle="rgba(255,255,255,.45)"; ctx.lineWidth=10; ctx.beginPath(); ctx.arc(0,0,36,-0.5,0.6); ctx.stroke(); ctx.restore();
+    const prog=1-player.attackT/0.20, sweep=-1.05+prog*2.1; // swing sweeps ~120° centred on the free aim angle
+    // Swoosh trail: an arc centred on the aim direction
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(player.aim); ctx.strokeStyle="rgba(255,255,255,.45)"; ctx.lineWidth=10; ctx.lineCap="round"; ctx.beginPath(); ctx.arc(0,0,36,-1.05,Math.min(1.05,sweep+0.25)); ctx.stroke(); ctx.restore();
+    // Blade at its current point in the sweep
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(player.aim+sweep); ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=5; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(34,0); ctx.stroke(); ctx.strokeStyle="#92400e"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(16,0); ctx.stroke(); ctx.restore();
   }
   ctx.fillStyle="#1e9e4a"; ctx.fillRect(sx-11,sy-4,22,18);
   ctx.fillStyle="#f6c453"; ctx.fillRect(sx-11,sy+8,22,4);
@@ -966,8 +981,8 @@ setTimeout(resize,50); setTimeout(resize,300);
 document.getElementById("startBtn").onclick=()=>{ started=true; document.getElementById("startOverlay").classList.add("hidden"); sfx.coin(); showToast("You start in town 🏘️ — visit the shop, then follow the roads out!"); if(audioCtx&&audioCtx.state==="suspended") audioCtx.resume(); };
 document.getElementById("respawnBtn").onclick=()=>{ resetGame(); document.getElementById("deadOverlay").classList.add("hidden"); showToast("You wake up in town — items and rupees kept"); };
 let tapT=0; canvas.addEventListener("pointerdown",e=>{ tapT=Date.now(); });
-canvas.addEventListener("pointerup",e=>{ if(Date.now()-tapT<180 && started && !shopOpen){ const r=canvas.getBoundingClientRect(); const dx=(e.clientX-r.left)-W/2, dy=(e.clientY-r.top)-H/2; if(Math.abs(dx)>Math.abs(dy)) player.dir=dx>0?"right":"left"; else player.dir=dy>0?"down":"up"; doAttack(); }});
+canvas.addEventListener("pointerup",e=>{ if(Date.now()-tapT<180 && started && !shopOpen){ const r=canvas.getBoundingClientRect(); const dx=(e.clientX-r.left)-W/2, dy=(e.clientY-r.top)-H/2; if(Math.hypot(dx,dy)>8){ player.aim=Math.atan2(dy,dx); syncDirFromAim(); } doAttack(); }});
 </script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}</script>
 </body>
 </html>
