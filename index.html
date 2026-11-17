@@ -111,7 +111,7 @@
 <body>
 <div id="app">
   <header class="hud">
-    <div class="title">HYRULE FIELD<small>Zelda Clone • PWA</small></div>
+    <div class="title">SWORD IN THE LAKE<small>Action Adventure • PWA</small></div>
     <div class="hearts" id="hearts" aria-label="Health"></div>
     <div class="pill">
       <div class="stat"><span>💎</span> <b id="rupees">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">rupees</span></div>
@@ -134,15 +134,17 @@
     <div class="overlay" id="startOverlay">
       <div class="card">
         <div style="font-size:44px;line-height:1">🗡️ 🌿 💎</div>
-        <h1>Hyrule <span>Field</span></h1>
-        <p>The overworld has grown: a <b>town</b> with a shop and villagers, the <b>Lost Woods</b>, open <b>Hyrule Field</b>, the sandy <b>Gerudo Drylands</b>, and <b>Lake Hylia's shore</b> — all connected by dirt roads. A banner names each zone as you enter it.</p>
+        <h1>Sword in the <span>Lake</span></h1>
+        <p>The overworld has grown: a <b>town</b> with a shop and villagers, the <b>Lost Woods</b>, open <b>Hyrule Field</b>, the sandy <b>Gerudo Drylands</b>, and <b>Lake Hylia's shore</b> — all connected by dirt roads. A banner names each zone as you enter it. Somewhere in the lake, a sword waits — but that claim is a long way off.</p>
         <div class="how">
           <div><b>📱 On phone</b><br>Touch anywhere on the left side — a floating stick appears under your thumb. Gold button swings the sword; the round ITEM button uses whatever you've equipped from your bag.</div>
           <div><b>🎯 Free-angle attacks</b><br>You attack at the exact angle you're moving — diagonals and everything in between, not just up/down/left/right. Stop moving and you keep facing that angle, so you can line up a swing, boomerang, or arrow and fire standing still.</div>
+          <div><b>🧭 Direction indicator</b><br>A small gold arrow at your feet always points where you're aiming. Your sprite only faces 4 ways, so trust the arrow — it's your true aim for sword, items, and shield.</div>
+          <div><b>🛡️ Your shield</b><br>Always equipped, no button to hold. It <b>only blocks ranged rocks</b> coming at you from the front — inside the cone you're aiming toward. Rocks from the side or behind still hit, and it never blocks bumping into an enemy.</div>
           <div><b>⌨️ On desktop</b><br>WASD / arrows (hold two keys for a diagonal aim), <b>Space</b> sword, <b>K</b> use equipped item, <b>L</b> bag, <b>E</b> shop.</div>
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
-          <div><b>👾 Enemies</b><br>Each slime moves in its own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. Sword hits flash, pause the game a beat, and knock them flying.</div>
+          <div><b>👾 Enemies</b><br>Slimes each move in their own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. New in the Field: <b>rock-spitters</b> walk a straight line, pause, and spit a rock at you — face the shot with your shield up-front to deflect it.</div>
           <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop.</div>
         </div>
         <button class="cta" id="startBtn">▶ &nbsp;Start Adventure</button>
@@ -219,7 +221,7 @@
 // ---------- PWA: inline manifest + install prompt ----------
 (function(){
   const iconSvg = "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%231a472a'/><text x='50%25' y='68%25' font-size='300' text-anchor='middle'>🗡️</text></svg>");
-  const manifest = {name:"Hyrule Field — Zelda Clone", short_name:"Hyrule Field", start_url:".", display:"standalone", background_color:"#0f2417", theme_color:"#1a472a", icons:[{src:iconSvg,sizes:"512x512",type:"image/svg+xml",purpose:"any"}]};
+  const manifest = {name:"Sword in the Lake", short_name:"Sword in the Lake", start_url:".", display:"standalone", background_color:"#0f2417", theme_color:"#1a472a", icons:[{src:iconSvg,sizes:"512x512",type:"image/svg+xml",purpose:"any"}]};
   try{ const blob=new Blob([JSON.stringify(manifest)],{type:"application/json"}); const l=document.createElement("link"); l.rel="manifest"; l.href=URL.createObjectURL(blob); document.head.appendChild(l);}catch(e){}
   window.addEventListener("beforeinstallprompt", e=>{e.preventDefault();});
   function install(){ showToast("Use Share → Add to Home Screen to install"); }
@@ -241,7 +243,7 @@ function beep(freq,dur,type,vol){
     o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+(dur||0.08));
   }catch(e){}
 }
-const sfx={ swing(){beep(520,.07,"square",.05); setTimeout(()=>beep(280,.06,"square",.04),30)}, hit(){beep(160,.1,"sawtooth",.08)}, coin(){beep(880,.07,"square",.06); setTimeout(()=>beep(1320,.12,"square",.06),60)}, hurt(){beep(110,.18,"sawtooth",.09)}, die(){beep(300,.12,"square",.07); setTimeout(()=>beep(180,.18,"square",.07),90)}, pop(){beep(660,.06,"sine",.06)}, buy(){beep(740,.08,"square",.06); setTimeout(()=>beep(990,.08,"square",.06),70); setTimeout(()=>beep(1320,.14,"square",.06),140)}, twang(){beep(190,.09,"sawtooth",.07); setTimeout(()=>beep(90,.08,"sawtooth",.05),40)}, whoosh(){beep(340,.05,"sine",.05); setTimeout(()=>beep(430,.05,"sine",.05),60); setTimeout(()=>beep(340,.05,"sine",.05),120)}, rustle(){beep(1200,.03,"sine",.015)}, denied(){beep(140,.12,"square",.06)} };
+const sfx={ swing(){beep(520,.07,"square",.05); setTimeout(()=>beep(280,.06,"square",.04),30)}, hit(){beep(160,.1,"sawtooth",.08)}, coin(){beep(880,.07,"square",.06); setTimeout(()=>beep(1320,.12,"square",.06),60)}, hurt(){beep(110,.18,"sawtooth",.09)}, die(){beep(300,.12,"square",.07); setTimeout(()=>beep(180,.18,"square",.07),90)}, pop(){beep(660,.06,"sine",.06)}, buy(){beep(740,.08,"square",.06); setTimeout(()=>beep(990,.08,"square",.06),70); setTimeout(()=>beep(1320,.14,"square",.06),140)}, twang(){beep(190,.09,"sawtooth",.07); setTimeout(()=>beep(90,.08,"sawtooth",.05),40)}, whoosh(){beep(340,.05,"sine",.05); setTimeout(()=>beep(430,.05,"sine",.05),60); setTimeout(()=>beep(340,.05,"sine",.05),120)}, rustle(){beep(1200,.03,"sine",.015)}, denied(){beep(140,.12,"square",.06)}, spit(){beep(300,.07,"square",.055); setTimeout(()=>beep(190,.06,"square",.045),45)}, clang(){beep(1180,.06,"square",.06); setTimeout(()=>beep(820,.09,"square",.05),35)} };
 document.getElementById("soundBtn").onclick=function(){ soundOn=!soundOn; this.textContent=soundOn?"🔊":"🔇"; if(soundOn) sfx.pop(); };
 
 
@@ -410,7 +412,7 @@ function cutTallAt(x,y,radius){
 // ---------- Entities ----------
 const player={x:13*TILE+20,y:13*TILE+20,r:13,speed:175,dir:"down",aim:Math.PI/2,hp:6,maxHp:6,attackT:0,attackCd:0,invuln:0,rustleT:0};
 let rupeesCount=0, kills=0, started=false, shopOpen=false, lastTime=0;
-let grass=[], enemies=[], pickups=[], particles=[], floaters=[], projectiles=[], npcs=[];
+let grass=[], enemies=[], pickups=[], particles=[], floaters=[], projectiles=[], eProjectiles=[], npcs=[];
 let hasBoomerang=false, hasBow=false, arrows=0, heartBought=false, weaponCd=0, equippedItem=null, bagOpen=false, tuningOpen=false, hitPauseT=0;
 let currentZoneKey="";
 function spawnGrass(){
@@ -425,17 +427,18 @@ function spawnGrass(){
     grass.push({x,y,alive:true,timer:0,phase:Math.random()*Math.PI*2,scale:rand(.85,1.15)});
   }
 }
-const ENEMY_TYPES={green:{hp:3,speed:72,aggro:145}, red:{hp:5,speed:94,aggro:165}, blue:{hp:3,speed:110,aggro:155}, purple:{hp:5,speed:82,aggro:160}};
+const ENEMY_TYPES={green:{hp:3,speed:72,aggro:145}, red:{hp:5,speed:94,aggro:165}, blue:{hp:3,speed:110,aggro:155}, purple:{hp:5,speed:82,aggro:160}, shooter:{hp:3,speed:52,aggro:230}};
 function makeEnemy(tx,ty,type){
   const s=ENEMY_TYPES[type];
-  return {x:tx*TILE+20,y:ty*TILE+20,spawnX:tx*TILE+20,spawnY:ty*TILE+20,r:14,speed:s.speed,hp:s.hp,maxHp:s.hp,dirX:0,dirY:1,changeT:rand(.5,2),aggro:false,aggroR:s.aggro,baseAggro:s.aggro,respawnT:0,alive:true,flash:0,stunT:0,type:type,wob:Math.random()*10,state:"pause",stateT:rand(.3,.9),pDirX:0,pDirY:1,kbX:0,kbY:0,immuneT:0,chargeDX:0,chargeDY:0,chargeLeft:0};
+  return {x:tx*TILE+20,y:ty*TILE+20,spawnX:tx*TILE+20,spawnY:ty*TILE+20,r:14,speed:s.speed,hp:s.hp,maxHp:s.hp,dirX:0,dirY:1,changeT:rand(.5,2),aggro:false,aggroR:s.aggro,baseAggro:s.aggro,respawnT:0,alive:true,flash:0,stunT:0,type:type,wob:Math.random()*10,state:type==="shooter"?"move":"pause",stateT:type==="shooter"?rand(.8,1.3):rand(.3,.9),pDirX:0,pDirY:1,kbX:0,kbY:0,immuneT:0,chargeDX:0,chargeDY:0,chargeLeft:0,faceAng:Math.PI/2,shootCd:rand(.4,1.2)};
 }
 function spawnEnemies(){
   enemies=[
     makeEnemy(30,24,"green"), makeEnemy(41,16,"green"), makeEnemy(45,31,"red"), makeEnemy(29,37,"green"), makeEnemy(38,37,"green"), makeEnemy(48,10,"green"),
     makeEnemy(9,25,"purple"), makeEnemy(16,34,"purple"), makeEnemy(7,41,"green"), makeEnemy(19,24,"green"),
     makeEnemy(56,9,"red"), makeEnemy(64,16,"red"), makeEnemy(58,22,"red"), makeEnemy(67,7,"red"),
-    makeEnemy(52,32,"blue"), makeEnemy(68,45,"blue"), makeEnemy(56,45,"blue")
+    makeEnemy(52,32,"blue"), makeEnemy(68,45,"blue"), makeEnemy(56,45,"blue"),
+    makeEnemy(33,23,"shooter"), makeEnemy(42,25,"shooter"), makeEnemy(37,9,"shooter"), makeEnemy(46,18,"shooter")
   ];
   enemies.forEach(en=>findOpen(en));
 }
@@ -505,6 +508,19 @@ function cutGrassAt(x,y,radius){
 function aimVec(){ return {x:Math.cos(player.aim), y:Math.sin(player.aim)}; }
 function dirVec(){ return aimVec(); }
 function angleDiff(a,b){ let d=a-b; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return d; }
+// Shield: passive, frontal cone around the current aim angle (last movement facing when still).
+// Only ranged projectiles are checked here — contact damage never calls this.
+const SHIELD_CONE=1.05; // ~60° either side of aim (~120° total frontal cone)
+function shieldBlocks(proj){
+  const toProj=Math.atan2(proj.y-player.y, proj.x-player.x);
+  return Math.abs(angleDiff(toProj, player.aim)) < SHIELD_CONE;
+}
+function spawnRock(en){
+  const a=Math.atan2(player.y-en.y, player.x-en.x);
+  en.faceAng=a;
+  eProjectiles.push({type:"rock",x:en.x+Math.cos(a)*18,y:en.y+Math.sin(a)*18,vx:Math.cos(a)*265,vy:Math.sin(a)*265,dist:0,ang:a});
+  sfx.spit();
+}
 function syncDirFromAim(){ const ax=Math.cos(player.aim), ay=Math.sin(player.aim); if(Math.abs(ax)>Math.abs(ay)) player.dir=ax>0?"right":"left"; else player.dir=ay>0?"down":"up"; }
 function doAttack(){
   if(player.attackCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen) return;
@@ -665,7 +681,7 @@ document.getElementById("tuningReset").addEventListener("click",()=>{ Object.ass
 
 function resetGame(){
   player.x=13*TILE+20; player.y=13*TILE+20; player.hp=player.maxHp; player.invuln=0; player.aim=Math.PI/2; player.dir="down";
-  pickups=[]; particles=[]; floaters=[]; projectiles=[];
+  pickups=[]; particles=[]; floaters=[]; projectiles=[]; eProjectiles=[];
   tallCells.forEach(c=>{ c.alive=true; c.timer=0; });
   spawnGrass(); spawnEnemies(); spawnStarterRupees(); updateHearts();
   currentZoneKey="";
@@ -718,6 +734,35 @@ function updateEnemyPattern(en,dt,dist){
         if(en.stateT<=0) en.stateT=rand(.3,.8);
       }
     }
+  } else if(en.type==="shooter"){ // Hyrule Field rock-spitter: straight walk, pause, spit, repeat
+    en.shootCd=Math.max(0,(en.shootCd||0)-dt);
+    if(en.aggro) en.faceAng=Math.atan2(player.y-en.y, player.x-en.x);
+    else if(en.state==="move") en.faceAng=Math.atan2(en.pDirY,en.pDirX);
+    if(en.state==="move"){
+      tryMove(en, en.pDirX*en.speed*sm*dt, en.pDirY*en.speed*sm*dt, en.r);
+      if(en.stateT<=0){ en.state="pause"; en.stateT=rand(.45,.7); }
+    } else if(en.state==="pause"){
+      if(en.stateT<=0){
+        if(en.aggro && player.hp>0 && dist<265 && en.shootCd<=0){
+          en.state="fire"; en.stateT=0.38; // readable wind-up: it puffs up before spitting
+        } else {
+          // pick the next straight-line segment: cardinal direction, biased toward the player when aggro
+          let a;
+          if(en.aggro){ const base=Math.atan2(player.y-en.y,player.x-en.x); a=Math.round(base/(Math.PI/2))*(Math.PI/2); if(Math.random()<0.25) a+= (Math.random()<0.5?1:-1)*(Math.PI/2); }
+          else a=Math.floor(rand(0,4))*(Math.PI/2);
+          en.pDirX=Math.cos(a); en.pDirY=Math.sin(a); en.faceAng=a;
+          en.state="move"; en.stateT=rand(.8,1.4);
+        }
+      }
+    } else if(en.state==="fire"){
+      if(en.stateT<=0){
+        if(en.aggro && player.hp>0 && dist<285) spawnRock(en);
+        en.shootCd=rand(1.1,1.7);
+        en.state="pause"; en.stateT=rand(.55,.85);
+      }
+    } else { // knocked into pause/recover etc. — resume the cycle
+      if(en.stateT<=0){ en.state="pause"; en.stateT=0.3; }
+    }
   } else { // Lake Hylia blue: quick darts between short pauses
     if(en.state==="dart"){
       tryMove(en, en.pDirX*275*sm*dt, en.pDirY*275*sm*dt, en.r);
@@ -760,7 +805,7 @@ function update(dt){
   });
 
   enemies.forEach(en=>{
-    if(!en.alive){ en.respawnT-=dt; if(en.respawnT<=0){ en.alive=true; en.hp=en.maxHp; en.x=en.spawnX; en.y=en.spawnY; en.aggro=false; en.stunT=0; en.kbX=0; en.kbY=0; en.immuneT=0; en.state="pause"; en.stateT=rand(.3,.8); burst(en.x,en.y,"#c084fc",10); floater(en.x,en.y-20,"respawned","#e9d5ff"); } return; }
+    if(!en.alive){ en.respawnT-=dt; if(en.respawnT<=0){ en.alive=true; en.hp=en.maxHp; en.x=en.spawnX; en.y=en.spawnY; en.aggro=false; en.stunT=0; en.kbX=0; en.kbY=0; en.immuneT=0; en.state="pause"; en.stateT=rand(.3,.8); en.shootCd=rand(.5,1.2); burst(en.x,en.y,"#c084fc",10); floater(en.x,en.y-20,"respawned","#e9d5ff"); } return; }
     en.flash=Math.max(0,en.flash-dt); en.immuneT=Math.max(0,en.immuneT-dt); en.wob+=dt*6;
     if(en.stunT>0){ en.stunT-=dt; return; }
     const dist=Math.hypot(player.x-en.x, player.y-en.y);
@@ -802,6 +847,28 @@ function update(dt){
     cutGrassAt(p.x,p.y,24);
     pickups.forEach(pk=>{ if(Math.hypot(pk.x-p.x,pk.y-p.y)<30) pk.grabbed=true; });
     return true;
+  });
+
+  // Enemy rocks — the one thing the shield exists for. Shield check happens at the
+  // moment of contact, against the player's current aim (kept when standing still).
+  eProjectiles=eProjectiles.filter(p=>{
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.dist+=Math.hypot(p.vx,p.vy)*dt;
+    if(isSolidAt(p.x,p.y)){ burst(p.x,p.y,"#a8a29e",5); return false; }
+    if(Math.hypot(player.x-p.x,player.y-p.y)<24 && player.hp>0){
+      if(shieldBlocks(p)){
+        burst(p.x,p.y,"#fde68a",10); burst(p.x,p.y,"#e5e7eb",5);
+        floater(player.x,player.y-26,"🛡️ Blocked!","#fde68a"); sfx.clang();
+        return false;
+      }
+      if(player.invuln<=0){
+        player.hp--; player.invuln=1.0; updateHearts(); sfx.hurt();
+        const kb=Math.atan2(player.y-p.y, player.x-p.x); tryMove(player, Math.cos(kb)*22, Math.sin(kb)*22, player.r);
+        burst(player.x,player.y,"#f87171",10); showToast("Hit by a rock! Face the shot to block it 🛡️");
+        if(player.hp<=0){ document.getElementById("deadText").textContent=`You collected ${rupeesCount} rupees and defeated ${kills} enemies.`; document.getElementById("deadOverlay").classList.remove("hidden"); }
+      }
+      return false;
+    }
+    return p.dist<560;
   });
 
   pickups=pickups.filter(p=>{
@@ -884,7 +951,7 @@ function drawRupee(x,y,value,t){
   const bob=Math.sin(t*4+x)*2; const col=value>=20?"#ef4444":value>=5?"#38bdf8":"#22e07a"; const dark=value>=20?"#991b1b":value>=5?"#075985":"#166534";
   ctx.save(); ctx.translate(x,y+bob); ctx.fillStyle=dark; ctx.beginPath(); ctx.moveTo(0,-11); ctx.lineTo(7,-4); ctx.lineTo(7,7); ctx.lineTo(0,13); ctx.lineTo(-7,7); ctx.lineTo(-7,-4); ctx.closePath(); ctx.fill(); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(5,-3); ctx.lineTo(5,6); ctx.lineTo(0,10); ctx.lineTo(-5,6); ctx.lineTo(-5,-3); ctx.closePath(); ctx.fill(); ctx.fillStyle="rgba(255,255,255,.75)"; ctx.fillRect(-2,-5,3,6); ctx.restore();
 }
-const ENEMY_COLORS={green:["#65d93a","#3a9d1f"],red:["#ef4444","#b91c1c"],blue:["#38bdf8","#0369a1"],purple:["#a855f7","#6d28d9"]};
+const ENEMY_COLORS={green:["#65d93a","#3a9d1f"],red:["#ef4444","#b91c1c"],blue:["#38bdf8","#0369a1"],purple:["#a855f7","#6d28d9"],shooter:["#fb923c","#c2410c"]};
 function drawEnemy(en,camX,camY){
   if(!en.alive) return; let sx=en.x-camX, sy=en.y-camY; if(sx<-180||sy<-180||sx>W+180||sy>H+180) return; const squash=1+Math.sin(en.wob)*0.06;
   if(en.state==="telegraph"){ sx+=rand(-2.5,2.5); sy+=rand(-1.5,1.5); } // charger telegraph: shake
@@ -892,6 +959,27 @@ function drawEnemy(en,camX,camY){
   if(en.aggro){ ctx.strokeStyle="rgba(255,70,70,.5)"; ctx.setLineDash([6,6]); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(sx,sy,effAggro,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
   else if(TUNING.showAggroRings){ ctx.strokeStyle="rgba(255,255,255,.25)"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,effAggro,0,Math.PI*2); ctx.stroke(); }
   const cols=ENEMY_COLORS[en.type];
+  if(en.type==="shooter"){ // rock-spitter: round orange body, little feet, and a snout that tracks its facing
+    if(en.state==="fire"){ sx+=rand(-1.5,1.5); sy+=rand(-1,1); }
+    ctx.save(); ctx.translate(sx,sy);
+    ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(0,14,13,4,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#7c2d12"; ctx.fillRect(-11,10,7,5); ctx.fillRect(4,10,7,5);
+    const puff=en.state==="fire"?1.12:1;
+    ctx.fillStyle=en.flash>0?"#ff2e63":cols[0]; ctx.beginPath(); ctx.arc(0,0,15*puff,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=cols[1]; ctx.beginPath(); ctx.arc(0,6,15*puff,0,Math.PI); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(-6,-5,4.4,0,Math.PI*2); ctx.arc(6,-5,4.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#111"; ctx.beginPath(); ctx.arc(-6,-5,2.1,0,Math.PI*2); ctx.arc(6,-5,2.1,0,Math.PI*2); ctx.fill();
+    // snout / spout in the facing direction — where the rock will come from
+    const fa=en.faceAng||0, fx=Math.cos(fa), fy=Math.sin(fa);
+    ctx.fillStyle=en.state==="fire"?"#fde047":cols[1]; ctx.beginPath(); ctx.arc(fx*14,fy*10+2,5.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#451a03"; ctx.beginPath(); ctx.arc(fx*16,fy*11+2,2.4,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    if(tallAt(en.x,en.y+8)) drawWading(sx,sy,performance.now()/1000+en.wob);
+    if(en.stunT>0){ ctx.font="15px serif"; ctx.textAlign="center"; ctx.fillText("💫",sx,sy-26); }
+    else if(en.hp<en.maxHp){ ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(sx-16,sy-26,32,5); ctx.fillStyle="#ff4757"; ctx.fillRect(sx-15,sy-25,30*(en.hp/en.maxHp),3); }
+    if(en.aggro&&en.stunT<=0){ ctx.fillStyle="#ffdf6b"; ctx.font="900 18px system-ui"; ctx.textAlign="center"; ctx.fillText("!",sx,sy-30); }
+    return;
+  }
   ctx.save(); ctx.translate(sx,sy); ctx.scale(1,squash);
   ctx.fillStyle=en.flash>0?"#ff2e63":(en.state==="telegraph"&&Math.floor(performance.now()/90)%2===0?"#fde047":cols[0]); ctx.beginPath(); ctx.ellipse(0,2,17,14,0,0,Math.PI*2); ctx.fill();
   ctx.fillStyle=cols[1]; ctx.beginPath(); ctx.ellipse(0,8,17,8,0,0,Math.PI); ctx.fill();
@@ -920,6 +1008,17 @@ function drawNPC(n,camX,camY){
 }
 function drawPlayer(camX,camY,time){
   const sx=player.x-camX, sy=player.y-camY;
+  // Direction indicator: a small gold arrow on the ground at the player's feet,
+  // always pointing along the true aim angle (the sprite itself only faces 4 ways).
+  // Drawn first so it sits under the body, subtle but always visible in gameplay.
+  if(started && player.hp>0){
+    ctx.save(); ctx.translate(sx,sy+16); ctx.rotate(player.aim);
+    ctx.fillStyle="rgba(0,0,0,.35)"; ctx.beginPath(); ctx.moveTo(24,0); ctx.lineTo(13,-6); ctx.lineTo(13,6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#f6c453"; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(23,0); ctx.lineTo(12.5,-5.5); ctx.lineTo(12.5,5.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="rgba(246,196,83,.55)"; ctx.fillRect(4,-1.5,8,3);
+    ctx.restore();
+  }
   if(player.invuln>0 && Math.floor(time*14)%2===0) ctx.globalAlpha=.45;
   ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+14,13,5,0,0,Math.PI*2); ctx.fill();
   if(player.attackT>0){
@@ -935,7 +1034,16 @@ function drawPlayer(camX,camY,time){
   ctx.fillStyle="#1e9e4a"; ctx.beginPath(); ctx.moveTo(sx-11,sy-14); ctx.lineTo(sx+11,sy-14); ctx.lineTo(sx+(player.dir==="left"?-16:player.dir==="right"?16:4), sy-24); ctx.closePath(); ctx.fill();
   ctx.fillStyle="#6b4423"; ctx.fillRect(sx-10,sy+14,7,6); ctx.fillRect(sx+3,sy+14,7,6);
   ctx.fillStyle="#111"; if(player.dir!=="up"){ ctx.beginPath(); ctx.arc(sx-4,sy-10,1.6,0,Math.PI*2); ctx.arc(sx+4,sy-10,1.6,0,Math.PI*2); ctx.fill(); }
-  ctx.fillStyle="#2563eb"; ctx.fillRect(player.dir==="left"?sx+9:sx-14, sy-2, 5,12); ctx.fillStyle="#f6c453"; ctx.fillRect(player.dir==="left"?sx+11:sx-12, sy+2,2,4);
+  // Shield: always carried, held on the aim side — this edge is what turns a frontal rock.
+  // Drawn as a small blue-and-silver shield offset toward the aim direction.
+  {
+    const shx=sx+Math.cos(player.aim)*13, shy=sy+1+Math.sin(player.aim)*10;
+    ctx.save(); ctx.translate(shx,shy); ctx.rotate(player.aim+Math.PI/2);
+    ctx.fillStyle="#1d4ed8"; ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(7,-5); ctx.lineTo(7,3); ctx.quadraticCurveTo(7,8,0,10); ctx.quadraticCurveTo(-7,8,-7,3); ctx.lineTo(-7,-5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#f6c453"; ctx.fillRect(-1.2,-5,2.4,10); ctx.fillRect(-4.5,-1.2,9,2.4);
+    ctx.restore();
+  }
   ctx.globalAlpha=1;
   if(tallAt(player.x,player.y+8)) drawWading(sx,sy,time);
 }
@@ -955,6 +1063,7 @@ function draw(){
   if(TUNING.showCollisionBoxes){ ctx.lineWidth=1.5; ctx.strokeStyle="#f0f"; enemies.forEach(en=>{ if(en.alive) ctx.strokeRect(en.x-en.r-camX,en.y-en.r-camY,en.r*2,en.r*2); }); ctx.strokeStyle="#0ff"; ctx.strokeRect(player.x-player.r-camX,player.y-player.r-camY,player.r*2,player.r*2); }
   drawTallFront(camX,camY,t);
   projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
+  eProjectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+5,6,2.5,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#78716c"; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#a8a29e"; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#57534e"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke(); });
   particles.forEach(p=>{ ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x-camX,p.y-camY,p.size,p.size); }); ctx.globalAlpha=1;
   floaters.forEach(f=>{ ctx.globalAlpha=1-f.t/1.1; ctx.font="800 13px system-ui"; ctx.textAlign="center"; ctx.fillStyle=f.color; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.lineWidth=3; ctx.strokeText(f.text,f.x-camX,f.y-camY); ctx.fillText(f.text,f.x-camX,f.y-camY); }); ctx.globalAlpha=1;
   const MW=264, MH=184, mx=MW/COLS, my=MH/ROWS;
