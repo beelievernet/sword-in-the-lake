@@ -140,7 +140,7 @@
           <div><b>📱 On phone</b><br>Touch anywhere on the left side — a floating stick appears under your thumb. Gold button swings the sword; the round ITEM button uses whatever you've equipped from your bag.</div>
           <div><b>🎯 Free-angle attacks</b><br>You attack at the exact angle you're moving — diagonals and everything in between, not just up/down/left/right. Stop moving and you keep facing that angle, so you can line up a swing, boomerang, or arrow and fire standing still.</div>
           <div><b>🧭 Direction indicator</b><br>A small gold arrow at your feet always points where you're aiming. Your sprite only faces 4 ways, so trust the arrow — it's your true aim for sword, items, and shield.</div>
-          <div><b>🛡️ Your shield</b><br>Always equipped, no button to hold. It <b>only blocks ranged rocks</b> coming at you from the front — inside the cone you're aiming toward. Rocks from the side or behind still hit, and it never blocks bumping into an enemy. Mid-swing it drops entirely: your shield swings out to your side while the sword arcs, so a frontal rock gets through until the swing ends.</div>
+          <div><b>🛡️ Your shield</b><br>Always equipped, no button to hold. It <b>only blocks ranged rocks</b> coming at you from the front — inside the cone you're aiming toward. Rocks from the side or behind still hit, and it never blocks bumping into an enemy. During <b>any attack</b> it drops entirely: your shield swings out to your side while you swing the sword, throw the boomerang, or shoot the bow, so a frontal rock gets through until that attack ends.</div>
           <div><b>⌨️ On desktop</b><br>WASD / arrows (hold two keys for a diagonal aim), <b>Space</b> sword, <b>K</b> use equipped item, <b>L</b> bag, <b>E</b> shop.</div>
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
@@ -517,7 +517,7 @@ function cutTallAt(x,y,radius){
 }
 
 // ---------- Entities ----------
-const player={x:13*TILE+20,y:13*TILE+20,r:13,speed:175,dir:"down",aim:Math.PI/2,hp:6,maxHp:6,attackT:0,attackCd:0,invuln:0,rustleT:0};
+const player={x:13*TILE+20,y:13*TILE+20,r:13,speed:175,dir:"down",aim:Math.PI/2,hp:6,maxHp:6,attackT:0,itemT:0,attackCd:0,invuln:0,rustleT:0};
 let rupeesCount=0, kills=0, started=false, shopOpen=false, lastTime=0;
 let grass=[], enemies=[], pickups=[], particles=[], floaters=[], projectiles=[], eProjectiles=[], npcs=[];
 let hasBoomerang=false, hasBow=false, arrows=0, heartBought=false, weaponCd=0, equippedItem=null, bagOpen=false, tuningOpen=false, hitPauseT=0;
@@ -617,12 +617,15 @@ function dirVec(){ return aimVec(); }
 function angleDiff(a,b){ let d=a-b; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return d; }
 // Shield: passive, frontal cone around the current aim angle (last movement facing when still).
 // Only ranged projectiles are checked here — contact damage never calls this.
-// State-dependent: while a sword swing is active (attackT>0) the shield is swung
-// out to the player's side (see drawPlayer) and the frontal guard is OFF — a rock
-// arriving mid-swing hits. The moment the swing ends the guard resumes.
+// State-dependent: while ANY attack is active — a sword swing (attackT>0), a
+// boomerang throw, or a bow shot (itemT>0) — the shield is swung out to the
+// player's side (see drawPlayer) and the frontal guard is OFF — a rock arriving
+// mid-attack hits. The moment the attack window ends the guard resumes.
+// Failed/denied item uses never set itemT, so they never drop the guard.
+function isAttacking(){ return player.attackT>0 || player.itemT>0; }
 const SHIELD_CONE=1.05; // ~60° either side of aim (~120° total frontal cone)
 function shieldBlocks(proj){
-  if(player.attackT>0) return false; // mid-swing: shield is at the side, nothing guards the front
+  if(isAttacking()) return false; // mid-attack: shield is at the side, nothing guards the front
   const toProj=Math.atan2(proj.y-player.y, proj.x-player.x);
   return Math.abs(angleDiff(toProj, player.aim)) < SHIELD_CONE;
 }
@@ -658,13 +661,13 @@ function doEquippedItem(){
 function doBoomerang(){
   if(!hasBoomerang||weaponCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen) { if(started&&!hasBoomerang) showToast("🪃 Buy the boomerang at the town shop — 💎60"); return; }
   if(projectiles.some(p=>p.type==="boom")) return;
-  weaponCd=0.4; const v=aimVec(); sfx.whoosh();
+  weaponCd=0.4; player.itemT=weaponCd; const v=aimVec(); sfx.whoosh();
   projectiles.push({type:"boom",x:player.x,y:player.y,vx:v.x*430,vy:v.y*430,dist:0,stage:"out",spin:0,hit:new Set()});
 }
 function doBow(){
   if(!hasBow||weaponCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen){ if(started&&!hasBow) showToast("🏹 Buy the bow at the town shop — 💎120"); return; }
   if(arrows<=0){ showToast("Out of arrows! The shop sells 10 for 💎20"); sfx.denied(); return; }
-  weaponCd=0.38; arrows--; updateInv(); const v=aimVec(); sfx.twang();
+  weaponCd=0.38; player.itemT=weaponCd; arrows--; updateInv(); const v=aimVec(); sfx.twang();
   projectiles.push({type:"arrow",x:player.x+v.x*16,y:player.y+v.y*16,vx:v.x*470,vy:v.y*470,dist:0,ang:Math.atan2(v.y,v.x)});
 }
 
@@ -791,7 +794,7 @@ document.getElementById("tuningImport").addEventListener("click",importTuning);
 document.getElementById("tuningReset").addEventListener("click",()=>{ Object.assign(TUNING,TUNING_DEFAULTS); saveTuning(); buildTuningUI(); showToast("⚙️ Tuning reset to defaults"); sfx.pop(); });
 
 function resetGame(){
-  player.x=13*TILE+20; player.y=13*TILE+20; player.hp=player.maxHp; player.invuln=0; player.aim=Math.PI/2; player.dir="down";
+  player.x=13*TILE+20; player.y=13*TILE+20; player.hp=player.maxHp; player.invuln=0; player.attackT=0; player.itemT=0; player.aim=Math.PI/2; player.dir="down";
   pickups=[]; particles=[]; floaters=[]; projectiles=[]; eProjectiles=[];
   tallCells.forEach(c=>{ c.alive=true; c.timer=0; });
   spawnGrass(); spawnEnemies(); spawnStarterRupees(); updateHearts();
@@ -891,7 +894,7 @@ function updateEnemyPattern(en,dt,dist){
 function update(dt){
   if(!started||shopOpen||bagOpen||tuningOpen) return;
   if(hitPauseT>0){ hitPauseT-=dt; return; } // hit-stop: the whole world freezes for a beat
-  player.attackCd=Math.max(0,player.attackCd-dt); player.attackT=Math.max(0,player.attackT-dt); player.invuln=Math.max(0,player.invuln-dt); weaponCd=Math.max(0,weaponCd-dt);
+  player.attackCd=Math.max(0,player.attackCd-dt); player.attackT=Math.max(0,player.attackT-dt); player.itemT=Math.max(0,player.itemT-dt); player.invuln=Math.max(0,player.invuln-dt); weaponCd=Math.max(0,weaponCd-dt);
   let ix=joyVec.x, iy=joyVec.y;
   if(keys["a"]||keys["arrowleft"]) ix-=1; if(keys["d"]||keys["arrowright"]) ix+=1; if(keys["w"]||keys["arrowup"]) iy-=1; if(keys["s"]||keys["arrowdown"]) iy+=1;
   const len=Math.hypot(ix,iy); if(len>1){ix/=len;iy/=len;}
@@ -1146,12 +1149,13 @@ function drawPlayer(camX,camY,time){
   ctx.fillStyle="#6b4423"; ctx.fillRect(sx-10,sy+14,7,6); ctx.fillRect(sx+3,sy+14,7,6);
   ctx.fillStyle="#111"; if(player.dir!=="up"){ ctx.beginPath(); ctx.arc(sx-4,sy-10,1.6,0,Math.PI*2); ctx.arc(sx+4,sy-10,1.6,0,Math.PI*2); ctx.fill(); }
   // Shield: always carried. Normally held on the aim side — this edge is what turns
-  // a frontal rock. While a sword swing is active it is displaced to the player's
-  // side, perpendicular to the aim (shield-arm side), visibly clear of the sword's
-  // arc — and in that state it guards nothing (see shieldBlocks).
+  // a frontal rock. While ANY attack is active (sword swing, boomerang throw, or
+  // bow shot) it is displaced to the player's side, perpendicular to the aim
+  // (shield-arm side), visibly clear of the attack — and in that state it guards
+  // nothing (see shieldBlocks).
   // Drawn as a small blue-and-silver shield offset toward the aim direction.
   {
-    const shAng = player.attackT>0 ? player.aim+Math.PI/2 : player.aim;
+    const shAng = isAttacking() ? player.aim+Math.PI/2 : player.aim;
     const shx=sx+Math.cos(shAng)*13, shy=sy+1+Math.sin(shAng)*10;
     ctx.save(); ctx.translate(shx,shy); ctx.rotate(shAng+Math.PI/2);
     ctx.fillStyle="#1d4ed8"; ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=2;
