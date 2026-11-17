@@ -145,7 +145,7 @@
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
           <div><b>👾 Enemies</b><br>Slimes each move in their own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. New in the Field: <b>rock-spitters</b> walk a straight line, pause, and spit a rock at you — face the shot with your shield up-front to deflect it.</div>
-          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop.</div>
+          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Trees only block at the trunk and rocks at their core, so you can slip behind canopies, slide along obstacles, and squeeze through gaps that fit your feet.</div>
         </div>
         <button class="cta" id="startBtn">▶ &nbsp;Start Adventure</button>
         <button class="subbtn" id="installBtn2">📲 Add to Home Screen (PWA)</button>
@@ -377,6 +377,75 @@ function tryMove(ent,dx,dy,r){
   if(!collides(ent.x+dx,ent.y,r)) ent.x+=dx;
   if(!collides(ent.x,ent.y+dy,r)) ent.y+=dy;
   ent.x=Math.max(20,Math.min(WORLD_W-20,ent.x)); ent.y=Math.max(20,Math.min(WORLD_H-20,ent.y));
+}
+
+// ---------- Player navigation (item 16: Zelda-style forgiving collision) ----------
+// Enemies and NPCs keep using collides()/tryMove() above, unchanged. The player
+// gets a separate, forgiving system:
+//  - Footprint: a small box at the feet/lower body (18 wide x 12 tall, centred
+//    on x, spanning y+3..y+15), NOT the whole ~22x38 sprite — so the head and
+//    shoulders can overlap canopies, rock tops and roof edges freely.
+//  - Obstacles collide only at their solid core: a tree at its trunk base, a
+//    rock inset from its drawn ellipse, a fence at its rail band, a cactus at
+//    its column, a building at its wall body inset from the roof/eaves.
+//  - Water and the world-boundary ring stay full-tile solid.
+//  - Movement resolves per axis (slide along obstacles), plus a corner assist:
+//    a clip of a few pixels on a corner nudges the player around it.
+const PLAYER_FOOT_HW=9, PLAYER_FOOT_TOP=3, PLAYER_FOOT_H=12, CORNER_ASSIST=7;
+function playerFootRect(x,y){ return {x:x-PLAYER_FOOT_HW, y:y+PLAYER_FOOT_TOP, w:PLAYER_FOOT_HW*2, h:PLAYER_FOOT_H}; }
+function tileSolidRects(tx,ty){
+  if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return [{x:tx*TILE,y:ty*TILE,w:TILE,h:TILE}];
+  const v=grid[ty][tx]; if(v===0) return [];
+  const X=tx*TILE, Y=ty*TILE;
+  if(tx===0||ty===0||tx===COLS-1||ty===ROWS-1) return [{x:X,y:Y,w:TILE,h:TILE}]; // boundary ring stays a wall
+  if(v===1) return [{x:X+14,y:Y+24,w:12,h:16}];   // tree: trunk/base only — canopy is walk-behind scenery
+  if(v===2) return [{x:X+8,y:Y+16,w:24,h:20}];    // rock: core inset from the drawn ellipse (x+3..37, y+11..37)
+  if(v===3) return [{x:X,y:Y,w:TILE,h:TILE}];     // water: full tile
+  if(v===4) return [{x:X+2,y:Y+13,w:36,h:16}];    // fence: the rail band, not the whole tile
+  if(v===7) return [{x:X+15,y:Y+10,w:10,h:26}];   // cactus: the central column
+  return [{x:X,y:Y,w:TILE,h:TILE}];
+}
+function buildingSolidRects(){
+  // Wall body only: inset from the sides and starting below the roof/eaves,
+  // so the player can stand close under the roofline but never enter a house.
+  return buildings.map(b=>({x:b.x+8, y:b.y+36, w:b.wpx-16, h:b.hpx-36}));
+}
+function rectsOverlap(a,b){ return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y; }
+function collidesPlayerAt(nx,ny){
+  const foot=playerFootRect(nx,ny);
+  if(foot.x<0||foot.y<0||foot.x+foot.w>WORLD_W||foot.y+foot.h>WORLD_H) return true;
+  const tx0=Math.floor(foot.x/TILE), tx1=Math.floor((foot.x+foot.w-1)/TILE);
+  const ty0=Math.floor(foot.y/TILE), ty1=Math.floor((foot.y+foot.h-1)/TILE);
+  for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
+    const rects=tileSolidRects(tx,ty);
+    for(let i=0;i<rects.length;i++) if(rectsOverlap(foot,rects[i])) return true;
+  }
+  const brs=buildingSolidRects();
+  for(let i=0;i<brs.length;i++) if(rectsOverlap(foot,brs[i])) return true;
+  return false;
+}
+function tryMovePlayer(dx,dy){
+  if(dx!==0){
+    if(!collidesPlayerAt(player.x+dx,player.y)) player.x+=dx;
+    else { // corner assist on X: nudge up/down a few px around the corner
+      const signs=dy>0?[1,-1]:[-1,1]; let done=false;
+      for(let mag=2;mag<=CORNER_ASSIST&&!done;mag++) for(let s=0;s<2&&!done;s++){
+        const shift=signs[s]*mag;
+        if(!collidesPlayerAt(player.x,player.y+shift) && !collidesPlayerAt(player.x+dx,player.y+shift)){ player.y+=shift; player.x+=dx; done=true; }
+      }
+    }
+  }
+  if(dy!==0){
+    if(!collidesPlayerAt(player.x,player.y+dy)) player.y+=dy;
+    else { // corner assist on Y: nudge left/right a few px around the corner
+      const signs=dx>0?[1,-1]:[-1,1]; let done=false;
+      for(let mag=2;mag<=CORNER_ASSIST&&!done;mag++) for(let s=0;s<2&&!done;s++){
+        const shift=signs[s]*mag;
+        if(!collidesPlayerAt(player.x+shift,player.y) && !collidesPlayerAt(player.x+shift,player.y+dy)){ player.x+=shift; player.y+=dy; done=true; }
+      }
+    }
+  }
+  player.x=Math.max(20,Math.min(WORLD_W-20,player.x)); player.y=Math.max(20,Math.min(WORLD_H-20,player.y));
 }
 
 // ---------- Tall grass (ALTTP-style wading grass) ----------
@@ -787,7 +856,7 @@ function update(dt){
   if(len>0.1){ player.aim=Math.atan2(iy,ix); syncDirFromAim(); }
   const inTall=!!tallAt(player.x,player.y+8);
   const spd=TUNING.playerSpeed*(inTall?TUNING.tallGrassFactor:1);
-  tryMove(player, ix*spd*dt, iy*spd*dt, player.r);
+  tryMovePlayer(ix*spd*dt, iy*spd*dt);
   if(inTall && len>0.1){ player.rustleT-=dt; if(player.rustleT<=0){ player.rustleT=0.16; burst(player.x+rand(-8,8),player.y+10,"#4ade80",2); sfx.rustle(); } }
   const zt=tileOf(player.x,player.y), z=zoneAt(zt.tx,zt.ty);
   if(z.key!==currentZoneKey){ currentZoneKey=z.key; showZone(z); }
@@ -821,7 +890,7 @@ function update(dt){
     }
     if(Math.hypot(player.x-en.x,player.y-en.y)<26 && player.invuln<=0 && player.hp>0){
       player.hp--; player.invuln=1.0; updateHearts(); sfx.hurt();
-      const kb=Math.atan2(player.y-en.y, player.x-en.x); tryMove(player, Math.cos(kb)*26, Math.sin(kb)*26, player.r);
+      const kb=Math.atan2(player.y-en.y, player.x-en.x); tryMovePlayer(Math.cos(kb)*26, Math.sin(kb)*26);
       burst(player.x,player.y,"#f87171",10); showToast("Ouch! −½ heart");
       if(player.hp<=0){ document.getElementById("deadText").textContent=`You collected ${rupeesCount} rupees and defeated ${kills} slimes.`; document.getElementById("deadOverlay").classList.remove("hidden"); }
     }
@@ -862,7 +931,7 @@ function update(dt){
       }
       if(player.invuln<=0){
         player.hp--; player.invuln=1.0; updateHearts(); sfx.hurt();
-        const kb=Math.atan2(player.y-p.y, player.x-p.x); tryMove(player, Math.cos(kb)*22, Math.sin(kb)*22, player.r);
+        const kb=Math.atan2(player.y-p.y, player.x-p.x); tryMovePlayer(Math.cos(kb)*22, Math.sin(kb)*22);
         burst(player.x,player.y,"#f87171",10); showToast("Hit by a rock! Face the shot to block it 🛡️");
         if(player.hp<=0){ document.getElementById("deadText").textContent=`You collected ${rupeesCount} rupees and defeated ${kills} enemies.`; document.getElementById("deadOverlay").classList.remove("hidden"); }
       }
@@ -1060,7 +1129,20 @@ function draw(){
   npcs.forEach(n=>drawNPC(n,camX,camY));
   enemies.forEach(en=>drawEnemy(en,camX,camY));
   drawPlayer(camX,camY,t);
-  if(TUNING.showCollisionBoxes){ ctx.lineWidth=1.5; ctx.strokeStyle="#f0f"; enemies.forEach(en=>{ if(en.alive) ctx.strokeRect(en.x-en.r-camX,en.y-en.r-camY,en.r*2,en.r*2); }); ctx.strokeStyle="#0ff"; ctx.strokeRect(player.x-player.r-camX,player.y-player.r-camY,player.r*2,player.r*2); }
+  if(TUNING.showCollisionBoxes){
+    ctx.lineWidth=1.5;
+    // Actual obstacle collision cores (trunk / rock core / fence band / water / buildings)
+    ctx.strokeStyle="#f0f";
+    const tx0=Math.max(0,Math.floor(camX/TILE)), tx1=Math.min(COLS-1,Math.floor((camX+W)/TILE));
+    const ty0=Math.max(0,Math.floor(camY/TILE)), ty1=Math.min(ROWS-1,Math.floor((camY+H)/TILE));
+    for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++) tileSolidRects(tx,ty).forEach(r=>ctx.strokeRect(r.x-camX,r.y-camY,r.w,r.h));
+    buildingSolidRects().forEach(r=>ctx.strokeRect(r.x-camX,r.y-camY,r.w,r.h));
+    ctx.strokeStyle="#fb923c"; enemies.forEach(en=>{ if(en.alive) ctx.strokeRect(en.x-en.r-camX,en.y-en.r-camY,en.r*2,en.r*2); });
+    // Actual player footprint: the small feet box, not the sprite
+    const pf=playerFootRect(player.x,player.y);
+    ctx.strokeStyle="#0ff"; ctx.strokeRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
+    ctx.fillStyle="rgba(0,255,255,.18)"; ctx.fillRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
+  }
   drawTallFront(camX,camY,t);
   projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
   eProjectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+5,6,2.5,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#78716c"; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#a8a29e"; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#57534e"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke(); });
