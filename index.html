@@ -981,7 +981,9 @@ setTimeout(resize,50); setTimeout(resize,300);
 document.getElementById("startBtn").onclick=()=>{ started=true; document.getElementById("startOverlay").classList.add("hidden"); sfx.coin(); showToast("You start in town 🏘️ — visit the shop, then follow the roads out!"); if(audioCtx&&audioCtx.state==="suspended") audioCtx.resume(); };
 document.getElementById("respawnBtn").onclick=()=>{ resetGame(); document.getElementById("deadOverlay").classList.add("hidden"); showToast("You wake up in town — items and rupees kept"); };
 let tapT=0; canvas.addEventListener("pointerdown",e=>{ tapT=Date.now(); });
-canvas.addEventListener("pointerup",e=>{ if(Date.now()-tapT<180 && started && !shopOpen){ const r=canvas.getBoundingClientRect(); const dx=(e.clientX-r.left)-W/2, dy=(e.clientY-r.top)-H/2; if(Math.hypot(dx,dy)>8){ player.aim=Math.atan2(dy,dx); syncDirFromAim(); } doAttack(); }});
+// A tap on the canvas swings the sword, but it never sets aim: aim comes from
+// movement direction only (the joystick / keys), and is kept when you stop moving.
+canvas.addEventListener("pointerup",e=>{ if(Date.now()-tapT<180 && started && !shopOpen){ doAttack(); }});
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}</script>
 </body>
