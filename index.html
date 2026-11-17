@@ -140,12 +140,12 @@
           <div><b>📱 On phone</b><br>Touch anywhere on the left side — a floating stick appears under your thumb. Gold button swings the sword; the round ITEM button uses whatever you've equipped from your bag.</div>
           <div><b>🎯 Free-angle attacks</b><br>You attack at the exact angle you're moving — diagonals and everything in between, not just up/down/left/right. Stop moving and you keep facing that angle, so you can line up a swing, boomerang, or arrow and fire standing still.</div>
           <div><b>🧭 Direction indicator</b><br>A small gold arrow at your feet always points where you're aiming. Your sprite only faces 4 ways, so trust the arrow — it's your true aim for sword, items, and shield.</div>
-          <div><b>🛡️ Your shield</b><br>Always equipped, no button to hold. It <b>only blocks ranged rocks</b> coming at you from the front — inside the cone you're aiming toward. Rocks from the side or behind still hit, and it never blocks bumping into an enemy.</div>
+          <div><b>🛡️ Your shield</b><br>Always equipped, no button to hold. It <b>only blocks ranged rocks</b> coming at you from the front — inside the cone you're aiming toward. Rocks from the side or behind still hit, and it never blocks bumping into an enemy. Mid-swing it drops entirely: your shield swings out to your side while the sword arcs, so a frontal rock gets through until the swing ends.</div>
           <div><b>⌨️ On desktop</b><br>WASD / arrows (hold two keys for a diagonal aim), <b>Space</b> sword, <b>K</b> use equipped item, <b>L</b> bag, <b>E</b> shop.</div>
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
           <div><b>👾 Enemies</b><br>Slimes each move in their own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. New in the Field: <b>rock-spitters</b> walk a straight line, pause, and spit a rock at you — face the shot with your shield up-front to deflect it.</div>
-          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Trees only block at the trunk and rocks at their core, so you can slip behind canopies, slide along obstacles, and squeeze through gaps that fit your feet.</div>
+          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Trees only block at the trunk and rocks at their core, so you can slip behind canopies and slide along obstacles. But trees or rocks planted touching each other form one solid barrier — go around the outside of the clump, never between them.</div>
         </div>
         <button class="cta" id="startBtn">▶ &nbsp;Start Adventure</button>
         <button class="subbtn" id="installBtn2">📲 Add to Home Screen (PWA)</button>
@@ -388,21 +388,59 @@ function tryMove(ent,dx,dy,r){
 //  - Obstacles collide only at their solid core: a tree at its trunk base, a
 //    rock inset from its drawn ellipse, a fence at its rail band, a cactus at
 //    its column, a building at its wall body inset from the roof/eaves.
+//  - Touching trees/rocks/cacti merge into one barrier (see tileSolidRects):
+//    no seams inside a group, so tree lines and clusters block off areas,
+//    while the group's outer edges keep the forgiving slide/corner feel.
 //  - Water and the world-boundary ring stay full-tile solid.
 //  - Movement resolves per axis (slide along obstacles), plus a corner assist:
 //    a clip of a few pixels on a corner nudges the player around it.
 const PLAYER_FOOT_HW=9, PLAYER_FOOT_TOP=3, PLAYER_FOOT_H=12, CORNER_ASSIST=7;
 function playerFootRect(x,y){ return {x:x-PLAYER_FOOT_HW, y:y+PLAYER_FOOT_TOP, w:PLAYER_FOOT_HW*2, h:PLAYER_FOOT_H}; }
+// Contiguous-obstacle seam sealing: trees, rocks and cacti are "group solids".
+// Isolated, each collides only at its core (below). But when two group solids
+// touch, they form ONE barrier: an orthogonally adjacent neighbour stretches
+// this tile's core rect across the shared edge until it meets the neighbour's
+// core, so there is no seam or pinhole between them — horizontally, vertically,
+// or mixed (tree next to rock). A diagonally adjacent neighbour adds a small
+// filler square at the shared tile corner only, sealing the diagonal seam.
+// The group's OUTER perimeter is untouched: cores stay inset there, sliding
+// and corner assist work exactly as before around the outside of the group.
+// Obstacles separated by real open space are not a group and never merge.
+const GROUP_SOLID={1:true,2:true,7:true};
+const CORE_EDGES={ // core rect edges as offsets inside a tile, per obstacle type
+  1:{l:14,r:26,t:24,b:40},  // tree: trunk/base only — canopy is walk-behind scenery
+  2:{l:8, r:32,t:16,b:36},  // rock: core inset from the drawn ellipse (x+3..37, y+11..37)
+  7:{l:15,r:25,t:10,b:36}   // cactus: the central column
+};
+function groupSolidAt(tx,ty){
+  if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return false;
+  if(tx===0||ty===0||tx===COLS-1||ty===ROWS-1) return false; // boundary ring is its own full-tile wall
+  return !!GROUP_SOLID[grid[ty][tx]];
+}
 function tileSolidRects(tx,ty){
   if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return [{x:tx*TILE,y:ty*TILE,w:TILE,h:TILE}];
   const v=grid[ty][tx]; if(v===0) return [];
   const X=tx*TILE, Y=ty*TILE;
   if(tx===0||ty===0||tx===COLS-1||ty===ROWS-1) return [{x:X,y:Y,w:TILE,h:TILE}]; // boundary ring stays a wall
-  if(v===1) return [{x:X+14,y:Y+24,w:12,h:16}];   // tree: trunk/base only — canopy is walk-behind scenery
-  if(v===2) return [{x:X+8,y:Y+16,w:24,h:20}];    // rock: core inset from the drawn ellipse (x+3..37, y+11..37)
   if(v===3) return [{x:X,y:Y,w:TILE,h:TILE}];     // water: full tile
   if(v===4) return [{x:X+2,y:Y+13,w:36,h:16}];    // fence: the rail band, not the whole tile
-  if(v===7) return [{x:X+15,y:Y+10,w:10,h:26}];   // cactus: the central column
+  if(GROUP_SOLID[v]){
+    const e=CORE_EDGES[v];
+    let l=X+e.l, r=X+e.r, t=Y+e.t, b=Y+e.b;
+    // Orthogonal neighbours: stretch the core across the shared edge to meet theirs.
+    if(groupSolidAt(tx+1,ty)) r=X+TILE+CORE_EDGES[grid[ty][tx+1]].l;
+    if(groupSolidAt(tx-1,ty)) l=X-TILE+CORE_EDGES[grid[ty][tx-1]].r;
+    if(groupSolidAt(tx,ty+1)) b=Y+TILE+CORE_EDGES[grid[ty+1][tx]].t;
+    if(groupSolidAt(tx,ty-1)) t=Y-TILE+CORE_EDGES[grid[ty-1][tx]].b;
+    const rects=[{x:l,y:t,w:r-l,h:b-t}];
+    // Diagonal neighbours: a small filler at the shared corner only.
+    const DIAG=13;
+    if(groupSolidAt(tx+1,ty+1)) rects.push({x:X+TILE-DIAG,y:Y+TILE-DIAG,w:DIAG*2,h:DIAG*2});
+    if(groupSolidAt(tx-1,ty+1)) rects.push({x:X-DIAG,y:Y+TILE-DIAG,w:DIAG*2,h:DIAG*2});
+    if(groupSolidAt(tx+1,ty-1)) rects.push({x:X+TILE-DIAG,y:Y-DIAG,w:DIAG*2,h:DIAG*2});
+    if(groupSolidAt(tx-1,ty-1)) rects.push({x:X-DIAG,y:Y-DIAG,w:DIAG*2,h:DIAG*2});
+    return rects;
+  }
   return [{x:X,y:Y,w:TILE,h:TILE}];
 }
 function buildingSolidRects(){
@@ -579,8 +617,12 @@ function dirVec(){ return aimVec(); }
 function angleDiff(a,b){ let d=a-b; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return d; }
 // Shield: passive, frontal cone around the current aim angle (last movement facing when still).
 // Only ranged projectiles are checked here — contact damage never calls this.
+// State-dependent: while a sword swing is active (attackT>0) the shield is swung
+// out to the player's side (see drawPlayer) and the frontal guard is OFF — a rock
+// arriving mid-swing hits. The moment the swing ends the guard resumes.
 const SHIELD_CONE=1.05; // ~60° either side of aim (~120° total frontal cone)
 function shieldBlocks(proj){
+  if(player.attackT>0) return false; // mid-swing: shield is at the side, nothing guards the front
   const toProj=Math.atan2(proj.y-player.y, proj.x-player.x);
   return Math.abs(angleDiff(toProj, player.aim)) < SHIELD_CONE;
 }
@@ -1103,11 +1145,15 @@ function drawPlayer(camX,camY,time){
   ctx.fillStyle="#1e9e4a"; ctx.beginPath(); ctx.moveTo(sx-11,sy-14); ctx.lineTo(sx+11,sy-14); ctx.lineTo(sx+(player.dir==="left"?-16:player.dir==="right"?16:4), sy-24); ctx.closePath(); ctx.fill();
   ctx.fillStyle="#6b4423"; ctx.fillRect(sx-10,sy+14,7,6); ctx.fillRect(sx+3,sy+14,7,6);
   ctx.fillStyle="#111"; if(player.dir!=="up"){ ctx.beginPath(); ctx.arc(sx-4,sy-10,1.6,0,Math.PI*2); ctx.arc(sx+4,sy-10,1.6,0,Math.PI*2); ctx.fill(); }
-  // Shield: always carried, held on the aim side — this edge is what turns a frontal rock.
+  // Shield: always carried. Normally held on the aim side — this edge is what turns
+  // a frontal rock. While a sword swing is active it is displaced to the player's
+  // side, perpendicular to the aim (shield-arm side), visibly clear of the sword's
+  // arc — and in that state it guards nothing (see shieldBlocks).
   // Drawn as a small blue-and-silver shield offset toward the aim direction.
   {
-    const shx=sx+Math.cos(player.aim)*13, shy=sy+1+Math.sin(player.aim)*10;
-    ctx.save(); ctx.translate(shx,shy); ctx.rotate(player.aim+Math.PI/2);
+    const shAng = player.attackT>0 ? player.aim+Math.PI/2 : player.aim;
+    const shx=sx+Math.cos(shAng)*13, shy=sy+1+Math.sin(shAng)*10;
+    ctx.save(); ctx.translate(shx,shy); ctx.rotate(shAng+Math.PI/2);
     ctx.fillStyle="#1d4ed8"; ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(7,-5); ctx.lineTo(7,3); ctx.quadraticCurveTo(7,8,0,10); ctx.quadraticCurveTo(-7,8,-7,3); ctx.lineTo(-7,-5); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle="#f6c453"; ctx.fillRect(-1.2,-5,2.4,10); ctx.fillRect(-4.5,-1.2,9,2.4);
