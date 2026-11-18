@@ -1,7 +1,7 @@
-// Sword in the Lake service worker — cache sword-in-the-lake-v10
+// Sword in the Lake service worker — cache sword-in-the-lake-v11
 // Bump the cache name on every rebuild that changes the app, or an
 // installed copy will keep serving the older build.
-var CACHE = 'sword-in-the-lake-v10';
+var CACHE = 'sword-in-the-lake-v11';
 var FILES = ['./', 'index.html', 'manifest.webmanifest',
   'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 self.addEventListener('install', function (e) {

@@ -450,8 +450,9 @@ function hasOrthoGroupNeighbor(tx,ty){
   return groupSolidAt(tx+1,ty)||groupSolidAt(tx-1,ty)||groupSolidAt(tx,ty+1)||groupSolidAt(tx,ty-1);
 }
 // The one tile-rect a cluster tile contributes to its cluster's union.
-// Bounds are shared by collision (tileSolidRects) and by the debug
-// outline (clusterOutlineLoops), so what is drawn is what collides.
+// These bounds are what collision tests (tileSolidRects) and what the
+// debug view draws (playerCollisionRects, built from tileSolidRects) —
+// one geometry source for both, so what is drawn is what collides.
 function clusterTileBounds(tx,ty){
   const X=tx*TILE, Y=ty*TILE;
   const x0=groupSolidAt(tx-1,ty)?X:X+CLUSTER_INSET;
@@ -517,76 +518,50 @@ function tileSolidRects(tx,ty){
   }
   return [{x:X,y:Y,w:TILE,h:TILE}];
 }
-// Clusters of orthogonally-touching group solids (flood fill). Used by
-// the debug view; collision itself needs only the local checks above.
-function buildClusters(){
-  const seen={}, clusters=[];
-  for(let ty=0;ty<ROWS;ty++) for(let tx=0;tx<COLS;tx++){
-    if(!groupSolidAt(tx,ty)||seen[tx+","+ty]) continue;
-    const tiles=[], stack=[[tx,ty]]; seen[tx+","+ty]=true;
-    while(stack.length){
-      const c=stack.pop(); tiles.push({tx:c[0],ty:c[1]});
-      const NB=[[1,0],[-1,0],[0,1],[0,-1]];
-      for(let i=0;i<NB.length;i++){
-        const nx=c[0]+NB[i][0], ny=c[1]+NB[i][1], k=nx+","+ny;
-        if(groupSolidAt(nx,ny)&&!seen[k]){ seen[k]=true; stack.push([nx,ny]); }
-      }
-    }
-    clusters.push(tiles);
-  }
-  return clusters;
-}
-// Boundary outline of one cluster's union, as closed loops of points.
-// Each boundary edge is directed so the union interior stays on the
-// same rotational side (outer loops wind one way, hole loops the
-// other), which lets the drawer tell convex corners from concave ones.
-function clusterOutlineLoops(tiles){
-  const inCl={}; tiles.forEach(t=>{ inCl[t.tx+","+t.ty]=true; });
-  const edges=[], byStart={};
-  function addEdge(x1,y1,x2,y2){
-    const e={x1:x1,y1:y1,x2:x2,y2:y2,used:false}; edges.push(e);
-    const k=x1+","+y1; (byStart[k]=byStart[k]||[]).push(e);
-  }
-  tiles.forEach(t=>{
-    const b=clusterTileBounds(t.tx,t.ty);
-    if(!inCl[t.tx+","+(t.ty-1)]) addEdge(b.x0,b.y0,b.x1,b.y0); // north: left -> right
-    if(!inCl[(t.tx+1)+","+t.ty]) addEdge(b.x1,b.y0,b.x1,b.y1); // east: top -> bottom
-    if(!inCl[t.tx+","+(t.ty+1)]) addEdge(b.x1,b.y1,b.x0,b.y1); // south: right -> left
-    if(!inCl[(t.tx-1)+","+t.ty]) addEdge(b.x0,b.y1,b.x0,b.y0); // west: bottom -> top
-  });
-  const loops=[];
-  edges.forEach(start=>{
-    if(start.used) return;
-    const pts=[]; let e=start;
-    while(e&&!e.used){
-      e.used=true;
-      pts.push({x:e.x1,y:e.y1});
-      const nexts=byStart[e.x2+","+e.y2]||[];
-      e=nexts.find(n=>!n.used)||null;
-      if(e===start) break;
-    }
-    if(pts.length>=4){
-      // Drop points that sit on a straight run: a rectangle outline is
-      // exactly its 4 corners, an L outline its 6 — one point per corner.
-      const clean=pts.filter((p,i)=>{
-        const a=pts[(i-1+pts.length)%pts.length], b=pts[(i+1)%pts.length];
-        return !((a.x===p.x&&p.x===b.x)||(a.y===p.y&&p.y===b.y));
-      });
-      loops.push(clean.length>=4?clean:pts);
-    }
-  });
-  return loops;
-}
-// Debug-view data: one entry per multi-tile cluster, holding its union
-// outline loops. A straight tree line yields ONE loop whose outer edges
-// are single straight segments — no per-trunk segments anywhere.
-function clusterDebugOutlines(){
-  return buildClusters().filter(c=>c.length>1).map(tiles=>({tiles:tiles, loops:clusterOutlineLoops(tiles)}));
-}
 function buildingSolidRects(){
   // Wall body only: inset from the sides and starting below the roof/eaves,
   // so the player can stand close under the roofline but never enter a house.
   return buildings.map(b=>({x:b.x+8, y:b.y+36, w:b.wpx-16, h:b.hpx-36}));
+}
+// The world-bounds block in collidesPlayerAt (feet box partly outside
+// the world) expressed as rects: four thick walls abutting the world's
+// outer edges. A feet box inside the world never touches them; a feet
+// box poking outside always does — exactly the bounds check's result.
+function worldBoundsRects(){
+  const T=1000;
+  return [
+    {x:-T, y:-T, w:WORLD_W+2*T, h:T},
+    {x:-T, y:WORLD_H, w:WORLD_W+2*T, h:T},
+    {x:-T, y:0, w:T, h:WORLD_H},
+    {x:WORLD_W, y:0, w:T, h:WORLD_H}
+  ];
+}
+// EVERY shape the player collision test can hit, from the same sources
+// collidesPlayerAt uses — this is the debug view's one and only shape
+// list, and the parity check tests collidesPlayerAt against it.
+// Contributors (audited against collidesPlayerAt):
+//  1. tileSolidRects for every tile: boundary-ring full tiles, water
+//     full tiles, fence rail bands, isolated tree/rock/cactus cores,
+//     per-tile cluster rects with their per-corner rounding, diagonal
+//     stepped connectors (from isolated AND clustered tiles alike),
+//     and the fallback full tile for any other solid grid value.
+//  2. buildingSolidRects: house/shop wall bodies.
+//  3. worldBoundsRects: the out-of-world early-out, as rects.
+// Nothing else blocks the player: enemies and NPCs never obstruct
+// movement (contact only deals damage/knockback through tryMovePlayer,
+// which itself tests only the shapes above), and grass, tall grass,
+// decor and pickups have no collision at all.
+function playerCollisionRects(){
+  const rects=[];
+  for(let ty=0;ty<ROWS;ty++) for(let tx=0;tx<COLS;tx++){
+    const rs=tileSolidRects(tx,ty);
+    for(let i=0;i<rs.length;i++) rects.push(rs[i]);
+  }
+  const brs=buildingSolidRects();
+  for(let i=0;i<brs.length;i++) rects.push(brs[i]);
+  const wbs=worldBoundsRects();
+  for(let i=0;i<wbs.length;i++) rects.push(wbs[i]);
+  return rects;
 }
 function rectsOverlap(a,b){ return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y; }
 function rectCornerRadii(b){
@@ -1224,35 +1199,6 @@ function strokeSolidRect(r,ox,oy){
   ctx.closePath();
   ctx.stroke();
 }
-// Stroke one cluster's union outline as single closed paths: straight
-// edges, quarter-circle rounding at convex corners only, concave
-// corners left square. This is the shape tileSolidRects collides with.
-function strokeClusterOutline(tiles,ox,oy){
-  clusterOutlineLoops(tiles).forEach(pts=>{
-    const n=pts.length; if(n<4) return;
-    let area=0; for(let i=0;i<n;i++){ const a=pts[i], b=pts[(i+1)%n]; area+=a.x*b.y-b.x*a.y; }
-    const aSign=area>0?1:-1;
-    const info=pts.map((v,i)=>{
-      const p=pts[(i-1+n)%n], q=pts[(i+1)%n];
-      const ix=v.x-p.x, iy=v.y-p.y, il=Math.hypot(ix,iy)||1;
-      const ox2=q.x-v.x, oy2=q.y-v.y, ol=Math.hypot(ox2,oy2)||1;
-      const cross=(ix/il)*(oy2/ol)-(iy/il)*(ox2/ol);
-      const convex=cross*aSign>0;
-      const rad=convex?Math.min(CLUSTER_RAD,il/2,ol/2):0;
-      return {v:v, ux:ix/il, uy:iy/il, vx:ox2/ol, vy:oy2/ol, rad:rad};
-    });
-    ctx.beginPath();
-    const f=info[0];
-    ctx.moveTo(f.v.x-ox+(f.rad>0?-f.ux*f.rad:0), f.v.y-oy+(f.rad>0?-f.uy*f.rad:0));
-    info.forEach(s=>{
-      if(s.rad>0){
-        ctx.lineTo(s.v.x-ox-s.ux*s.rad, s.v.y-oy-s.uy*s.rad);
-        ctx.quadraticCurveTo(s.v.x-ox, s.v.y-oy, s.v.x-ox+s.vx*s.rad, s.v.y-oy+s.vy*s.rad);
-      } else ctx.lineTo(s.v.x-ox, s.v.y-oy);
-    });
-    ctx.closePath(); ctx.stroke();
-  });
-}
 function drawWorld(camX,camY,t){
   for(let ty=0;ty<ROWS;ty++) for(let tx=0;tx<COLS;tx++){
     const sx=tx*TILE-camX, sy=ty*TILE-camY; if(sx<-TILE||sy<-TILE||sx>W||sy>H) continue;
@@ -1430,22 +1376,20 @@ function draw(){
   drawPlayer(camX,camY,t);
   if(TUNING.showCollisionBoxes){
     ctx.lineWidth=1.5;
-    // Actual obstacle collision shapes, drawn as they truly are: isolated
-    // cores with their rounded corners and diagonal connectors, and each
-    // connected cluster as one union outline.
+    // The EXACT shapes the player collides with, drawn rect for rect
+    // from playerCollisionRects() — the same list collidesPlayerAt is
+    // tested against. Every per-tile cluster rect with its per-corner
+    // rounding, every isolated core, every diagonal connector, water,
+    // fences, buildings and the boundary: if it can stop the player it
+    // is stroked here, and nothing else is. (There is no outline tracer
+    // anymore: the previous one reordered corners on non-rectangular
+    // clusters, slashing diagonals across them, and dropped the shapes
+    // it could not loop, leaving blocking trees with no box at all.)
     ctx.strokeStyle="#f0f";
-    const tx0=Math.max(0,Math.floor(camX/TILE)), tx1=Math.min(COLS-1,Math.floor((camX+W)/TILE));
-    const ty0=Math.max(0,Math.floor(camY/TILE)), ty1=Math.min(ROWS-1,Math.floor((camY+H)/TILE));
-    // Clustered group solids are drawn once per cluster as a single
-    // union outline (below), never as per-tile rects — lines render as
-    // clean straight-edged blocks. Everything else draws its own rects.
-    for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
-      const v=grid[ty][tx];
-      if(GROUP_SOLID[v]&&hasOrthoGroupNeighbor(tx,ty)) continue;
-      tileSolidRects(tx,ty).forEach(r=>strokeSolidRect(r,camX,camY));
-    }
-    buildClusters().forEach(tiles=>{ if(tiles.length>1) strokeClusterOutline(tiles,camX,camY); });
-    buildingSolidRects().forEach(r=>ctx.strokeRect(r.x-camX,r.y-camY,r.w,r.h));
+    playerCollisionRects().forEach(r=>{
+      if(r.x>camX+W||r.x+r.w<camX||r.y>camY+H||r.y+r.h<camY) return; // off-screen cull only
+      strokeSolidRect(r,camX,camY);
+    });
     ctx.strokeStyle="#fb923c"; enemies.forEach(en=>{ if(en.alive) ctx.strokeRect(en.x-en.r-camX,en.y-en.r-camY,en.r*2,en.r*2); });
     // Actual player footprint: the small feet box, not the sprite
     const pf=playerFootRect(player.x,player.y);
