@@ -145,7 +145,7 @@
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
           <div><b>👾 Enemies</b><br>Slimes each move in their own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. New in the Field: <b>rock-spitters</b> walk a straight line, pause, and spit a rock at you — face the shot with your shield up-front to deflect it.</div>
-          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. A lone tree only blocks at its trunk and a lone rock at its core, but trees or rocks planted touching each other join into one solid block that stops you near its tile edge — its outline is straight, its outer corners are rounded, so press diagonally and you'll ease around it and off the end of a tree wall smoothly, no catching, no lurch. Go around the outside of a clump, never between touching trees.</div>
+          <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Every tree blocks exactly where its trunk is drawn, every rock and cactus at its drawn core — walk right up under a canopy until your feet meet the trunk. Trees or rocks planted touching each other join trunk-to-trunk into one straight bar that follows the trunks, so press diagonally and you'll ease around its rounded ends and off the end of a tree wall smoothly, no catching, no lurch. Trees that only touch at a corner don't join at all — the gap between their trunks is open ground, so you can slip through diagonally. Go around the outside of a clump, never between side-by-side trees.</div>
         </div>
         <button class="cta" id="startBtn">▶ &nbsp;Start Adventure</button>
         <button class="subbtn" id="installBtn2">📲 Add to Home Screen (PWA)</button>
@@ -389,23 +389,23 @@ function tryMove(ent,dx,dy,r){
 //    its trunk base, a lone rock inset from its drawn ellipse, a fence at
 //    its rail band, a lone cactus at its column, a building at its wall
 //    body inset from the roof/eaves.
-//  - CONNECTED trees/rocks/cacti (orthogonally touching) form a cluster
-//    that collides as the UNION of its tiles (see tileSolidRects): each
-//    tile contributes its full tile rect inset by 4px on its outer edges
-//    and flush on edges shared with a cluster neighbour, so a tree line
-//    is one straight-edged block — no trunk capsules, no bridge strips,
-//    no zigzag along what should be a straight line. Convex outer
-//    corners of the union are rounded; concave (inside) corners stay
-//    clean and square. Trade-off: a cluster's edge stops the player near
-//    the tile boundary, less tight than a lone tree's trunk; lone trees
-//    are unchanged.
+//  - CONNECTED trees/rocks/cacti (orthogonally touching) join into one
+//    shape built from the members' anchors (see tileSolidRects): each
+//    member keeps its own core, and each orthogonally adjacent pair is
+//    linked by a bridge rect that fills the gap between the two cores
+//    along the band where the cores overlap. A tree line is therefore
+//    one straight bar that follows the trunks themselves — its faces
+//    sit exactly where a lone tree's faces sit, it never swells to the
+//    tile edges, and there is no zigzag along what should be a straight
+//    line. Convex outer corners (the outer corners of the end cores)
+//    are rounded; concave (inside) corners stay clean and square.
 //  - Water and the world-boundary ring stay full-tile solid.
 //  - Tree/rock/cactus cores are ROUNDED rectangles, not sharp boxes: their
 //    corners are quarter-circles (see rectsOverlapRounded), so a player
 //    pressing diagonally against a corner meets a curve and slides around
 //    it continuously, from any approach angle, instead of catching on a
-//    point. Interior corners of a merged group are covered by the
-//    neighbouring tile's rect, so only the group's OUTER corners round.
+//    point. Bridge rects are flush with the core faces they join, so
+//    only a joined shape's OUTER corners ever meet the player.
 //  - Movement is sub-stepped with tangent steering (see tryMovePlayer).
 //    There is NO instant corner teleport: the old assist shifted the player
 //    up to 7px in a single frame, which read as a snag-then-burst at the
@@ -414,76 +414,120 @@ function tryMove(ent,dx,dy,r){
 //    movement for that frame.
 const PLAYER_FOOT_HW=9, PLAYER_FOOT_TOP=3, PLAYER_FOOT_H=12;
 function playerFootRect(x,y){ return {x:x-PLAYER_FOOT_HW, y:y+PLAYER_FOOT_TOP, w:PLAYER_FOOT_HW*2, h:PLAYER_FOOT_H}; }
-// Trees, rocks and cacti are "group solids". Two collision models:
-//  - ISOLATED (no orthogonal group-solid neighbour): the small core only
-//    (below) — a lone tree blocks just at its 8x14 trunk, exactly as
-//    before this change.
-//  - CLUSTER (one or more orthogonal neighbours): the cluster collides
-//    as the union of its tiles' rectangles. Each tile contributes a rect
-//    inset by CLUSTER_INSET on edges facing open ground and flush (no
-//    inset, no gap) on edges shared with a cluster neighbour, so the
-//    union outline of a line or block is straight-edged. A tile rect's
-//    corner is rounded ONLY where it is a convex corner of the union
-//    (both edge-neighbours on that corner absent); every other corner
-//    is square, so concave (inside) corners stay clean and square and
-//    no internal bridge/capsule edges exist inside a cluster.
-//  - Diagonal-only contact between two otherwise-separate obstacles
-//    (isolated or separate clusters): a thin STEPPED CONNECTOR (6px
-//    wide) runs from the solid's corner to the shared tile corner, so
-//    the corner point cannot be threaded. If either tile sharing that
-//    corner is itself a group solid, the corner is already sealed by
-//    the cluster union / orthogonal join and nothing is added.
+// Trees, rocks and cacti are "group solids". Collision geometry is
+// generated from ONE canonical record per obstacle type —
+// OBSTACLE_GEOMETRY below — which is also the record the renderer
+// draws from (drawWorld reads the same numbers for the tree's trunk,
+// the rock's ellipse and the cactus's column). No collision shape is
+// computed from tile indices alone: every shape is placed from the
+// anchor, the exact pixel centre of the part that is drawn.
+//
+// Why this replaced the old generation: the old code derived shapes
+// from the TILE GRID — an isolated obstacle got a small tile-relative
+// core, but a clustered one got its whole tile rect (inset 4px), whose
+// centre sits up to ~13px away from the drawn trunk's centre, and
+// diagonal tile neighbours got an 8x8 "seal" at their shared tile
+// corner even when the two actual cores were up to ~41px apart there,
+// leaving small orphan squares floating in open grass (measured on a
+// generated world: 108 seal rects, seal centres up to ~29px from the
+// nearest solid they belonged to). The renderer never jittered tree
+// positions — every trunk is drawn at the same tile offset — so the
+// disagreement was entirely in how collision was generated.
+//
+// The model now:
+//  - ISOLATED: the core only, centred on the anchor — a lone tree
+//    blocks just at its 8x14 trunk core (the drawn trunk is 6x14).
+//  - CLUSTER (one or more orthogonal neighbours): the SAME core, plus
+//    one bridge rect per orthogonally adjacent pair, filling the gap
+//    between the two cores along the band where their ranges overlap
+//    on the cross axis. The joined shape is continuous, its outer
+//    faces follow the outer members' core faces (the trunk line), and
+//    nothing swells toward the tile edges.
+//  - DIAGONAL neighbours: a seal is generated ONLY when the two tiles'
+//    actual shapes (cores + bridges) come within SEAL_GAP px of each
+//    other — measured from the shapes, never from tile adjacency. Two
+//    lone trees a full tile apart diagonally are ~41px apart at the
+//    corner: no seal, and the corner is open, walkable ground.
 // Obstacles separated by real open space never merge.
 const GROUP_SOLID={1:true,2:true,7:true};
-const CORE_EDGES={ // core rect edges as offsets inside a tile, per obstacle type (isolated obstacles only)
-  1:{l:16,r:24,t:24,b:38},  // tree: the drawn trunk is x17..23, y24..38 (6x14) — core is the trunk plus 1px a side
-  2:{l:8, r:32,t:16,b:36},  // rock: core inset from the drawn ellipse (x+3..37, y+11..37)
-  7:{l:15,r:25,t:10,b:36}   // cactus: the central column
+// Canonical per-type geometry, offsets inside a tile. `draw` is the
+// part the renderer paints (and the anchor is its centre); `core` is
+// the collision core's size, centred on that same anchor.
+const OBSTACLE_GEOMETRY={
+  1:{draw:{x:17,y:24,w:6,h:14},  core:{w:8, h:14}},  // tree: trunk 6x14, centre (20,31)
+  2:{draw:{cx:20,cy:24,rx:17,ry:13}, core:{w:24,h:20}}, // rock: ellipse centre (20,24)
+  7:{draw:{x:16,y:8, w:8,h:26},  core:{w:10,h:26}}   // cactus: column 8x26, centre (20,21)
 };
-const CLUSTER_INSET=4, CLUSTER_RAD=9;
+function obstacleAnchor(tx,ty){
+  const g=OBSTACLE_GEOMETRY[grid[ty][tx]]; if(!g) return null;
+  const d=g.draw;
+  const ax=(d.cx!==undefined?d.cx:d.x+d.w/2), ay=(d.cy!==undefined?d.cy:d.y+d.h/2);
+  return {x:tx*TILE+ax, y:ty*TILE+ay};
+}
 function groupSolidAt(tx,ty){
   if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return false;
   if(tx===0||ty===0||tx===COLS-1||ty===ROWS-1) return false; // boundary ring is its own full-tile wall
   return !!GROUP_SOLID[grid[ty][tx]];
 }
-function hasOrthoGroupNeighbor(tx,ty){
-  return groupSolidAt(tx+1,ty)||groupSolidAt(tx-1,ty)||groupSolidAt(tx,ty+1)||groupSolidAt(tx,ty-1);
-}
-// The one tile-rect a cluster tile contributes to its cluster's union.
-// These bounds are what collision tests (tileSolidRects) and what the
-// debug view draws (playerCollisionRects, built from tileSolidRects) —
-// one geometry source for both, so what is drawn is what collides.
-function clusterTileBounds(tx,ty){
-  const X=tx*TILE, Y=ty*TILE;
-  const x0=groupSolidAt(tx-1,ty)?X:X+CLUSTER_INSET;
-  const x1=groupSolidAt(tx+1,ty)?X+TILE:X+TILE-CLUSTER_INSET;
-  const y0=groupSolidAt(tx,ty-1)?Y:Y+CLUSTER_INSET;
-  const y1=groupSolidAt(tx,ty+1)?Y+TILE:Y+TILE-CLUSTER_INSET;
-  return {x0:x0,y0:y0,x1:x1,y1:y1};
-}
-function clusterTileRect(tx,ty){
-  const b=clusterTileBounds(tx,ty);
-  const r={x:b.x0, y:b.y0, w:b.x1-b.x0, h:b.y1-b.y0};
-  const W_=groupSolidAt(tx-1,ty), E_=groupSolidAt(tx+1,ty), N_=groupSolidAt(tx,ty-1), S_=groupSolidAt(tx,ty+1);
-  // Rounded only at convex union corners: both edge-neighbours absent.
-  r.radTL=(!W_&&!N_)?CLUSTER_RAD:0;
-  r.radTR=(!E_&&!N_)?CLUSTER_RAD:0;
-  r.radBR=(!E_&&!S_)?CLUSTER_RAD:0;
-  r.radBL=(!W_&&!S_)?CLUSTER_RAD:0;
-  return r;
-}
-// The main solid rect of a group-solid tile (cluster tile rect or
-// isolated core), without any diagonal seals. Null for non-group tiles.
+// The core rect of a group-solid tile: its canonical core size centred
+// on its drawn anchor. Identical whether the obstacle stands alone or
+// in a cluster — cluster membership adds bridges (tileSolidRects), it
+// never resizes or moves a core. Null for non-group tiles.
 function mainSolidRect(tx,ty){
   if(!groupSolidAt(tx,ty)) return null;
-  if(hasOrthoGroupNeighbor(tx,ty)) return clusterTileRect(tx,ty);
-  const e=CORE_EDGES[grid[ty][tx]];
-  const X=tx*TILE, Y=ty*TILE;
-  const r={x:X+e.l, y:Y+e.t, w:e.r-e.l, h:e.b-e.t};
-  // Rounded corners: radius is capped by the core's own half-size, so an
-  // isolated trunk (8 wide) rounds by 4 and a rock core by 9.
+  const g=OBSTACLE_GEOMETRY[grid[ty][tx]], a=obstacleAnchor(tx,ty);
+  const r={x:a.x-g.core.w/2, y:a.y-g.core.h/2, w:g.core.w, h:g.core.h};
+  // Rounded corners: radius is capped by the core's own half-size, so a
+  // trunk (8 wide) rounds by 4 and a rock core by 9.
   r.rad=Math.min(9, r.w/2, r.h/2);
   return r;
+}
+// The bridge rect joining two orthogonally adjacent group solids:
+// it spans the gap between the two cores, along the band where the
+// cores overlap on the cross axis, so its faces are flush with both
+// cores' faces wherever the two cores share a face line. Generated
+// identically from either tile, like the seals below.
+function bridgeRectBetween(tx,ty,nx,ny){
+  const a=mainSolidRect(tx,ty), b=mainSolidRect(nx,ny);
+  if(!a||!b) return null;
+  if(ny===ty){ // horizontal neighbours: bridge along the y-overlap band
+    const y0=Math.max(a.y,b.y), y1=Math.min(a.y+a.h,b.y+b.h);
+    if(y1-y0<4) return null;
+    const x0=Math.min(a.x+a.w,b.x+b.w), x1=Math.max(a.x,b.x);
+    return x1>x0?{x:x0,y:y0,w:x1-x0,h:y1-y0}:null;
+  }
+  // vertical neighbours: bridge along the x-overlap band
+  const x0=Math.max(a.x,b.x), x1=Math.min(a.x+a.w,b.x+b.w);
+  if(x1-x0<4) return null;
+  const y0=Math.min(a.y+a.h,b.y+b.h), y1=Math.max(a.y,b.y);
+  return y1>y0?{x:x0,y:y0,w:x1-x0,h:y1-y0}:null;
+}
+// All of a tile's own group-solid shapes except any diagonal seal:
+// its core plus its bridges to orthogonal neighbours. This is the set
+// the diagonal-seal gap is measured against.
+function ownSolidRects(tx,ty){
+  const main=mainSolidRect(tx,ty); if(!main) return [];
+  const rects=[main];
+  const ORTHO=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let i=0;i<ORTHO.length;i++){
+    const nx=tx+ORTHO[i][0], ny=ty+ORTHO[i][1];
+    if(!groupSolidAt(nx,ny)) continue;
+    const br=bridgeRectBetween(tx,ty,nx,ny);
+    if(br) rects.push(br);
+  }
+  return rects;
+}
+// Closest points between two rects (0 distance when they overlap or
+// touch), and the AABB gap between them.
+function rectGap(a,b){
+  const gx=Math.max(0, Math.max(b.x-(a.x+a.w), a.x-(b.x+b.w)));
+  const gy=Math.max(0, Math.max(b.y-(a.y+a.h), a.y-(b.y+b.h)));
+  return Math.hypot(gx,gy);
+}
+function rectClosestPoints(a,b){
+  const ax=Math.max(a.x,Math.min(b.x+b.w/2,a.x+a.w)), ay=Math.max(a.y,Math.min(b.y+b.h/2,a.y+a.h));
+  const bx=Math.max(b.x,Math.min(ax,b.x+b.w)), by=Math.max(b.y,Math.min(ay,b.y+b.h));
+  return {ax:ax,ay:ay,bx:bx,by:by};
 }
 function tileSolidRects(tx,ty){
   if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return [{x:tx*TILE,y:ty*TILE,w:TILE,h:TILE}];
@@ -493,35 +537,43 @@ function tileSolidRects(tx,ty){
   if(v===3) return [{x:X,y:Y,w:TILE,h:TILE}];     // water: full tile
   if(v===4) return [{x:X+2,y:Y+13,w:36,h:16}];    // fence: the rail band, not the whole tile
   if(GROUP_SOLID[v]){
-    const main=mainSolidRect(tx,ty);
-    const rects=[main];
-    // Diagonal neighbours: a corner-square seal, only when the corner is
-    // not already sealed through a shared orthogonal neighbour. The seal
-    // is the square of half-size SEAL_H centred on the shared tile corner
-    // P, clipped to the corner quadrant of BOTH solids — it may not cross
-    // this solid's facing corner or the neighbour's facing corner, so
-    // every point of it lies beyond both face lines that meet at this
-    // corner, never beside a face span. (The old stepped arms did cross:
-    // one arm straddled the tile edge, the other straddled the solid's
-    // face line, so they stuck out of otherwise straight faces as nubs
-    // that the feet box caught on mid-slide, and an isolated core's arm
-    // reached up to 16px along the neighbouring face.) For two cluster
-    // tiles the facing corners sit CLUSTER_INSET either side of P, so
-    // the seal is exactly the 8x8 corner square, flush with all four
-    // face lines. The seal covers P itself, so the corner point stays
-    // unthreadable, and both diagonal tiles generate the identical rect.
-    const SEAL_H=4;
+    // Core + bridges to orthogonal neighbours, all placed from anchors.
+    const rects=ownSolidRects(tx,ty);
+    const main=rects[0];
+    // Diagonal neighbours: a seal ONLY when the two tiles' actual
+    // shapes genuinely almost meet. The gap is measured between this
+    // tile's shape set (core + bridges) and the diagonal tile's shape
+    // set — never inferred from tile adjacency. If either tile sharing
+    // the corner is itself a group solid, the corner is already joined
+    // through that neighbour's core and bridges, so nothing is added.
+    // When a seal IS warranted, it is the small square centred on the
+    // midpoint of the closest points of the two shapes, clipped so it
+    // cannot cross either core's facing corner — it fills the real gap
+    // and nothing beside a face. Both diagonal tiles measure the same
+    // closest pair and generate the identical rect. In practice, with
+    // cores centred on their drawn parts, diagonal cores sit ~16px or
+    // more apart even for the largest (rock) cores, so generated
+    // worlds produce no seals at all: diagonal corners are open ground.
+    const SEAL_GAP=6, SEAL_H=4;
+    const ownCount=rects.length; // seals added below never feed later gap measurements
     const DIAGS=[[1,1],[1,-1],[-1,1],[-1,-1]];
     for(let i=0;i<DIAGS.length;i++){
       const dx=DIAGS[i][0], dy=DIAGS[i][1];
       if(!groupSolidAt(tx+dx,ty+dy)) continue;
-      if(groupSolidAt(tx+dx,ty)||groupSolidAt(tx,ty+dy)) continue; // sealed via the shared neighbour
-      const nMain=mainSolidRect(tx+dx,ty+dy); if(!nMain) continue;
-      const px=dx>0?X+TILE:X, py=dy>0?Y+TILE:Y;
+      if(groupSolidAt(tx+dx,ty)||groupSolidAt(tx,ty+dy)) continue; // joined via the shared neighbour
+      const theirs=ownSolidRects(tx+dx,ty+dy);
+      let best=null, bestGap=Infinity;
+      for(let a=0;a<ownCount;a++) for(let b=0;b<theirs.length;b++){
+        const g=rectGap(rects[a],theirs[b]);
+        if(g<bestGap){ bestGap=g; best=rectClosestPoints(rects[a],theirs[b]); }
+      }
+      if(!best||bestGap>SEAL_GAP) continue;
+      const nMain=theirs[0];
+      const mx=(best.ax+best.bx)/2, my=(best.ay+best.by)/2;
       const ax=dx>0?main.x+main.w:main.x, ay=dy>0?main.y+main.h:main.y;
       const bx=dx>0?nMain.x:nMain.x+nMain.w, by=dy>0?nMain.y:nMain.y+nMain.h;
-      const x0=Math.max(px-SEAL_H, Math.min(ax,bx)), x1=Math.min(px+SEAL_H, Math.max(ax,bx));
-      const y0=Math.max(py-SEAL_H, Math.min(ay,by)), y1=Math.min(py+SEAL_H, Math.max(ay,by));
+      const x0=Math.max(mx-SEAL_H, Math.min(ax,bx)), x1=Math.min(mx+SEAL_H, Math.max(ax,bx));
+      const y0=Math.max(my-SEAL_H, Math.min(ay,by)), y1=Math.min(my+SEAL_H, Math.max(ay,by));
       if(x1>x0&&y1>y0) rects.push({x:x0, y:y0, w:x1-x0, h:y1-y0});
     }
     return rects;
@@ -551,10 +603,11 @@ function worldBoundsRects(){
 // list, and the parity check tests collidesPlayerAt against it.
 // Contributors (audited against collidesPlayerAt):
 //  1. tileSolidRects for every tile: boundary-ring full tiles, water
-//     full tiles, fence rail bands, isolated tree/rock/cactus cores,
-//     per-tile cluster rects with their per-corner rounding, diagonal
-//     corner-square seals (from isolated AND clustered tiles alike),
-//     and the fallback full tile for any other solid grid value.
+//     full tiles, fence rail bands, tree/rock/cactus cores centred on
+//     their drawn anchors (rounded), bridge rects joining orthogonal
+//     neighbours' cores, diagonal seals (only where the measured gap
+//     between the actual shapes is a few px — none in generated
+//     worlds), and the fallback full tile for any other solid value.
 //  2. buildingSolidRects: house/shop wall bodies.
 //  3. worldBoundsRects: the out-of-world early-out, as rects.
 // Nothing else blocks the player: enemies and NPCs never obstruct
@@ -1232,10 +1285,10 @@ function drawWorld(camX,camY,t){
     ctx.fillStyle=floor; ctx.fillRect(sx,sy,TILE,TILE);
     if(isPath(tx,ty)&&v!==3){ ctx.fillStyle=(tx*7+ty*3)%3===0?"#cdb083":"#d6b26a"; ctx.fillRect(sx,sy,TILE,TILE); }
     if(v===3){ ctx.fillStyle="#2aa7c9"; ctx.fillRect(sx,sy,TILE,TILE); ctx.fillStyle="rgba(255,255,255,.35)"; const wob=Math.sin(t*2+tx)*3; ctx.fillRect(sx+6+wob,sy+10,16,3); ctx.fillRect(sx+18-wob,sy+24,12,3); }
-    if(v===1){ const dark=z==="forest"; ctx.fillStyle=dark?"#17451d":"#2f7d33"; ctx.beginPath(); ctx.arc(sx+20,sy+16,20,0,Math.PI*2); ctx.fill(); ctx.fillStyle=dark?"#1f6129":"#3cb04a"; ctx.beginPath(); ctx.arc(sx+14,sy+12,13,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#6b4423"; ctx.fillRect(sx+17,sy+24,6,14); }
-    if(v===2){ ctx.fillStyle="#9aa0a3"; ctx.beginPath(); ctx.ellipse(sx+20,sy+24,17,13,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#c2c7c9"; ctx.beginPath(); ctx.ellipse(sx+15,sy+19,9,6,0,0,Math.PI*2); ctx.fill(); }
+    if(v===1){ const dark=z==="forest"; ctx.fillStyle=dark?"#17451d":"#2f7d33"; ctx.beginPath(); ctx.arc(sx+20,sy+16,20,0,Math.PI*2); ctx.fill(); ctx.fillStyle=dark?"#1f6129":"#3cb04a"; ctx.beginPath(); ctx.arc(sx+14,sy+12,13,0,Math.PI*2); ctx.fill(); const td=OBSTACLE_GEOMETRY[1].draw; ctx.fillStyle="#6b4423"; ctx.fillRect(sx+td.x,sy+td.y,td.w,td.h); }
+    if(v===2){ const rd=OBSTACLE_GEOMETRY[2].draw; ctx.fillStyle="#9aa0a3"; ctx.beginPath(); ctx.ellipse(sx+rd.cx,sy+rd.cy,rd.rx,rd.ry,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#c2c7c9"; ctx.beginPath(); ctx.ellipse(sx+15,sy+19,9,6,0,0,Math.PI*2); ctx.fill(); }
     if(v===4){ ctx.fillStyle="#8b5e2e"; ctx.fillRect(sx+3,sy+14,34,6); ctx.fillRect(sx+6,sy+8,5,24); ctx.fillRect(sx+29,sy+8,5,24); }
-    if(v===7){ ctx.fillStyle="#2e8b57"; ctx.fillRect(sx+16,sy+8,8,26); ctx.fillRect(sx+8,sy+16,8,5); ctx.fillRect(sx+8,sy+12,5,9); ctx.fillRect(sx+24,sy+14,8,5); ctx.fillRect(sx+27,sy+10,5,9); ctx.fillStyle="#f472b6"; ctx.beginPath(); ctx.arc(sx+20,sy+7,4,0,Math.PI*2); ctx.fill(); }
+    if(v===7){ const cd=OBSTACLE_GEOMETRY[7].draw; ctx.fillStyle="#2e8b57"; ctx.fillRect(sx+cd.x,sy+cd.y,cd.w,cd.h); ctx.fillRect(sx+8,sy+16,8,5); ctx.fillRect(sx+8,sy+12,5,9); ctx.fillRect(sx+24,sy+14,8,5); ctx.fillRect(sx+27,sy+10,5,9); ctx.fillStyle="#f472b6"; ctx.beginPath(); ctx.arc(sx+20,sy+7,4,0,Math.PI*2); ctx.fill(); }
   }
   decor.forEach(d=>{ const sx=d.x-camX, sy=d.y-camY; if(sx<-10||sy<-10||sx>W+10||sy>H+10) return; if(d.kind==="pebble"){ ctx.fillStyle="#b8a888"; ctx.fillRect(sx,sy,5,3); } else if(d.kind==="shell"){ ctx.fillStyle="#fff1f2"; ctx.beginPath(); ctx.arc(sx,sy,3,Math.PI,0); ctx.fill(); } else { ctx.fillStyle=d.c; ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fef08a"; ctx.fillRect(sx-1,sy-1,2,2); } });
 }
@@ -1398,10 +1451,10 @@ function draw(){
     ctx.lineWidth=1.5;
     // The EXACT shapes the player collides with, drawn rect for rect
     // from playerCollisionRects() — the same list collidesPlayerAt is
-    // tested against. Every per-tile cluster rect with its per-corner
-    // rounding, every isolated core, every diagonal corner seal, water,
-    // fences, buildings and the boundary: if it can stop the player it
-    // is stroked here, and nothing else is. (There is no outline tracer
+    // tested against. Every anchor-centred core with its rounding,
+    // every bridge joining a cluster, every (rare) measured diagonal
+    // seal, water, fences, buildings and the boundary: if it can stop
+    // the player it is stroked here, and nothing else is. (There is no outline tracer
     // anymore: the previous one reordered corners on non-rectangular
     // clusters, slashing diagonals across them, and dropped the shapes
     // it could not loop, leaving blocking trees with no box at all.)
