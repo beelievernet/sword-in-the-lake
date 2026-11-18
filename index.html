@@ -406,12 +406,12 @@ function tryMove(ent,dx,dy,r){
 //    it continuously, from any approach angle, instead of catching on a
 //    point. Interior corners of a merged group are covered by the
 //    neighbouring tile's rect, so only the group's OUTER corners round.
-//  - Movement is sub-stepped and resolves per axis (slide along obstacles).
+//  - Movement is sub-stepped with tangent steering (see tryMovePlayer).
 //    There is NO instant corner teleport: the old assist shifted the player
 //    up to 7px in a single frame, which read as a snag-then-burst at the
 //    end of a tree wall. Any steering around a corner now happens through
 //    ordinary sub-steps whose total length never exceeds the requested
-//    movement for that frame (see tryMovePlayer).
+//    movement for that frame.
 const PLAYER_FOOT_HW=9, PLAYER_FOOT_TOP=3, PLAYER_FOOT_H=12;
 function playerFootRect(x,y){ return {x:x-PLAYER_FOOT_HW, y:y+PLAYER_FOOT_TOP, w:PLAYER_FOOT_HW*2, h:PLAYER_FOOT_H}; }
 // Trees, rocks and cacti are "group solids". Two collision models:
@@ -472,6 +472,19 @@ function clusterTileRect(tx,ty){
   r.radBL=(!W_&&!S_)?CLUSTER_RAD:0;
   return r;
 }
+// The main solid rect of a group-solid tile (cluster tile rect or
+// isolated core), without any diagonal seals. Null for non-group tiles.
+function mainSolidRect(tx,ty){
+  if(!groupSolidAt(tx,ty)) return null;
+  if(hasOrthoGroupNeighbor(tx,ty)) return clusterTileRect(tx,ty);
+  const e=CORE_EDGES[grid[ty][tx]];
+  const X=tx*TILE, Y=ty*TILE;
+  const r={x:X+e.l, y:Y+e.t, w:e.r-e.l, h:e.b-e.t};
+  // Rounded corners: radius is capped by the core's own half-size, so an
+  // isolated trunk (8 wide) rounds by 4 and a rock core by 9.
+  r.rad=Math.min(9, r.w/2, r.h/2);
+  return r;
+}
 function tileSolidRects(tx,ty){
   if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return [{x:tx*TILE,y:ty*TILE,w:TILE,h:TILE}];
   const v=grid[ty][tx]; if(v===0) return [];
@@ -480,39 +493,36 @@ function tileSolidRects(tx,ty){
   if(v===3) return [{x:X,y:Y,w:TILE,h:TILE}];     // water: full tile
   if(v===4) return [{x:X+2,y:Y+13,w:36,h:16}];    // fence: the rail band, not the whole tile
   if(GROUP_SOLID[v]){
-    const clustered=hasOrthoGroupNeighbor(tx,ty);
-    let main, rects;
-    if(clustered){
-      main=clusterTileRect(tx,ty);
-      rects=[main];
-    } else {
-      const e=CORE_EDGES[v];
-      main={x:X+e.l, y:Y+e.t, w:e.r-e.l, h:e.b-e.t};
-      // Rounded corners: radius is capped by the core's own half-size, so an
-      // isolated trunk (8 wide) rounds by 4 and a rock core by 9. Connectors
-      // below are plain sharp rects meeting the core along its flat faces.
-      main.rad=Math.min(9, main.w/2, main.h/2);
-      rects=[main];
-    }
-    // Diagonal neighbours: stepped connectors, only when the corner is not
-    // already sealed through a shared orthogonal neighbour. Each connector
-    // runs from this solid's corner nearest the shared tile corner:
-    // horizontally along the tile edge to that corner, then vertically
-    // along the solid's face line — 6px wide, intruding at most 3px into
-    // the open tiles beside the corner; the diagonal neighbour's own
-    // connector completes the join through the point. For a cluster tile
-    // the solid's corner sits CLUSTER_INSET from the tile corner, so its
-    // connector is a short 4px stub; for an isolated core it is longer.
-    const TH=3;
+    const main=mainSolidRect(tx,ty);
+    const rects=[main];
+    // Diagonal neighbours: a corner-square seal, only when the corner is
+    // not already sealed through a shared orthogonal neighbour. The seal
+    // is the square of half-size SEAL_H centred on the shared tile corner
+    // P, clipped to the corner quadrant of BOTH solids — it may not cross
+    // this solid's facing corner or the neighbour's facing corner, so
+    // every point of it lies beyond both face lines that meet at this
+    // corner, never beside a face span. (The old stepped arms did cross:
+    // one arm straddled the tile edge, the other straddled the solid's
+    // face line, so they stuck out of otherwise straight faces as nubs
+    // that the feet box caught on mid-slide, and an isolated core's arm
+    // reached up to 16px along the neighbouring face.) For two cluster
+    // tiles the facing corners sit CLUSTER_INSET either side of P, so
+    // the seal is exactly the 8x8 corner square, flush with all four
+    // face lines. The seal covers P itself, so the corner point stays
+    // unthreadable, and both diagonal tiles generate the identical rect.
+    const SEAL_H=4;
     const DIAGS=[[1,1],[1,-1],[-1,1],[-1,-1]];
     for(let i=0;i<DIAGS.length;i++){
       const dx=DIAGS[i][0], dy=DIAGS[i][1];
       if(!groupSolidAt(tx+dx,ty+dy)) continue;
       if(groupSolidAt(tx+dx,ty)||groupSolidAt(tx,ty+dy)) continue; // sealed via the shared neighbour
+      const nMain=mainSolidRect(tx+dx,ty+dy); if(!nMain) continue;
       const px=dx>0?X+TILE:X, py=dy>0?Y+TILE:Y;
-      const kx=dx>0?main.x+main.w:main.x, ky=dy>0?main.y+main.h:main.y;
-      if(kx!==px) rects.push({x:Math.min(px,kx), y:py-TH, w:Math.abs(kx-px), h:TH*2});
-      if(ky!==py) rects.push({x:kx-TH, y:Math.min(py,ky), w:TH*2, h:Math.abs(ky-py)});
+      const ax=dx>0?main.x+main.w:main.x, ay=dy>0?main.y+main.h:main.y;
+      const bx=dx>0?nMain.x:nMain.x+nMain.w, by=dy>0?nMain.y:nMain.y+nMain.h;
+      const x0=Math.max(px-SEAL_H, Math.min(ax,bx)), x1=Math.min(px+SEAL_H, Math.max(ax,bx));
+      const y0=Math.max(py-SEAL_H, Math.min(ay,by)), y1=Math.min(py+SEAL_H, Math.max(ay,by));
+      if(x1>x0&&y1>y0) rects.push({x:x0, y:y0, w:x1-x0, h:y1-y0});
     }
     return rects;
   }
@@ -543,7 +553,7 @@ function worldBoundsRects(){
 //  1. tileSolidRects for every tile: boundary-ring full tiles, water
 //     full tiles, fence rail bands, isolated tree/rock/cactus cores,
 //     per-tile cluster rects with their per-corner rounding, diagonal
-//     stepped connectors (from isolated AND clustered tiles alike),
+//     corner-square seals (from isolated AND clustered tiles alike),
 //     and the fallback full tile for any other solid grid value.
 //  2. buildingSolidRects: house/shop wall bodies.
 //  3. worldBoundsRects: the out-of-world early-out, as rects.
@@ -612,9 +622,9 @@ function solidRectHit(foot,r){
 function collidesPlayerAt(nx,ny){
   const foot=playerFootRect(nx,ny);
   if(foot.x<0||foot.y<0||foot.x+foot.w>WORLD_W||foot.y+foot.h>WORLD_H) return true;
-  // Check a 1-tile margin around the foot: diagonal connectors extend
-  // toward their shared tile corner, so a neighbouring tile's rect can
-  // reach the foot even when the foot is not inside that tile.
+  // Check a 1-tile margin around the foot: a diagonal seal is generated
+  // by both tiles at their shared corner, so a neighbouring tile's rect
+  // can reach the foot even when the foot is not inside that tile.
   const tx0=Math.floor(foot.x/TILE)-1, tx1=Math.floor((foot.x+foot.w-1)/TILE)+1;
   const ty0=Math.floor(foot.y/TILE)-1, ty1=Math.floor((foot.y+foot.h-1)/TILE)+1;
   for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
@@ -626,18 +636,27 @@ function collidesPlayerAt(nx,ny){
   for(let i=0;i<brs.length;i++) if(rectsOverlap(foot,brs[i])) return true;
   return false;
 }
-// Movement: sub-stepped axis sliding with NO positional teleport.
+// Movement: sub-stepped tangent steering with NO positional teleport.
 // The frame's displacement is split into sub-steps of at most ~2px. Each
-// sub-step tries the full step, then each axis alone (sliding). If a
-// diagonal step is deadlocked on a rounded corner (both axes blocked),
-// the sub-step vector is ROTATED toward the tangent in small increments
-// and the first free rotation is taken — a rotation keeps the vector's
-// length, so a sub-step never moves the player farther than that sub-step
-// itself, and a whole frame never moves farther than the requested
-// (dx,dy) length. Corners are therefore rounded over several frames at
-// normal speed: no snag-teleport, and no burst when a wall ends — the
-// frame the wall releases, the player simply takes the same size step
-// they have been taking all along.
+// sub-step first tries the full step. If that is blocked and the step is
+// diagonal, the step vector is ROTATED in fine increments (0.2 rad,
+// smallest offset first, either side) and the first free rotation is
+// taken: this is a projection of the movement onto the tangent of
+// whatever is blocking — a flat face (the free rotation is the one
+// parallel to the face) or a rounded convex corner (the free rotation
+// follows the arc, and the offset it needs grows and shrinks gradually
+// as the contact point travels around the curve, so the heading turns
+// continuously for the whole contact instead of hitching between a
+// blocked axis and a free one frame to frame). A rotation preserves the
+// vector's length exactly, so a steered sub-step still moves the full
+// sub-step distance — speed is preserved through slides and cornering —
+// while the dot-product guard keeps every accepted rotation making
+// progress along the input, and a whole frame never moves farther than
+// the requested (dx,dy) length. Only when no rotation is free does the
+// sub-step fall back to a single-axis slide, and only when that is
+// blocked too is the sub-step lost (a genuine head-on stop). There is
+// no burst when a wall ends: the frame the wall releases, the player
+// simply takes the same size step they have been taking all along.
 function tryMovePlayer(dx,dy){
   if(dx===0&&dy===0) return;
   const dist=Math.hypot(dx,dy);
@@ -646,20 +665,21 @@ function tryMovePlayer(dx,dy){
   for(let s=0;s<steps;s++){
     if(!collidesPlayerAt(player.x+sx,player.y+sy)){ player.x+=sx; player.y+=sy; continue; }
     let moved=false;
-    if(sx!==0 && !collidesPlayerAt(player.x+sx,player.y)){ player.x+=sx; moved=true; }
-    else if(sy!==0 && !collidesPlayerAt(player.x,player.y+sy)){ player.y+=sy; moved=true; }
-    if(!moved && sx!==0 && sy!==0){
-      // Deadlocked on a corner: steer the sub-step around it. Rotations
-      // preserve length exactly, so this cannot add speed — it only
-      // changes direction, gradually, one sub-step at a time.
+    if(sx!==0 && sy!==0){
+      // Blocked diagonal: steer along the tangent at full step length.
       const base=Math.atan2(sy,sx), len=Math.hypot(sx,sy);
-      const offs=[0.6,-0.6,1.1,-1.1,1.55,-1.55];
-      for(let k=0;k<offs.length;k++){
-        const a=base+offs[k], vx=Math.cos(a)*len, vy=Math.sin(a)*len;
-        // Only accept a rotation that still makes progress along the input.
-        if(vx*sx+vy*sy<=0) continue;
-        if(!collidesPlayerAt(player.x+vx,player.y+vy)){ player.x+=vx; player.y+=vy; moved=true; break; }
+      for(let k=1;k<=8&&!moved;k++){
+        for(let sgn=1;sgn>=-1&&!moved;sgn-=2){
+          const a=base+sgn*k*0.2, vx=Math.cos(a)*len, vy=Math.sin(a)*len;
+          // Only accept a rotation that still makes progress along the input.
+          if(vx*sx+vy*sy<=0) continue;
+          if(!collidesPlayerAt(player.x+vx,player.y+vy)){ player.x+=vx; player.y+=vy; moved=true; }
+        }
       }
+    }
+    if(!moved){
+      if(sx!==0 && !collidesPlayerAt(player.x+sx,player.y)){ player.x+=sx; moved=true; }
+      else if(sy!==0 && !collidesPlayerAt(player.x,player.y+sy)){ player.y+=sy; moved=true; }
     }
     // If nothing was free, this sub-step is simply lost (head-on block).
   }
@@ -1379,7 +1399,7 @@ function draw(){
     // The EXACT shapes the player collides with, drawn rect for rect
     // from playerCollisionRects() — the same list collidesPlayerAt is
     // tested against. Every per-tile cluster rect with its per-corner
-    // rounding, every isolated core, every diagonal connector, water,
+    // rounding, every isolated core, every diagonal corner seal, water,
     // fences, buildings and the boundary: if it can stop the player it
     // is stroked here, and nothing else is. (There is no outline tracer
     // anymore: the previous one reordered corners on non-rectangular
