@@ -11,7 +11,6 @@
 <meta name="color-scheme" content="dark"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗡️</text></svg>"/>
 <title>Sword in the Lake</title>
-<link rel="manifest" href="manifest.webmanifest"/>
 <style>
   :root{--bg:#0f2417;--panel:#162f1e;--gold:#f6c453;--gold2:#e8a91c;--green:#3ecf5a;--ink:#fff8dc;--muted:#b9c9b0;--red:#ff4757;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -75,6 +74,8 @@
   #minimap{position:absolute;right:10px;top:10px;width:132px;height:92px;border-radius:10px;border:2px solid rgba(255,255,255,.35);background:#0f2d16;z-index:4;box-shadow:0 6px 18px rgba(0,0,0,.35)}
   #arrowStat.empty{border-color:#ff4757;color:#ff6b81;background:#2a0d12}
   #arrowStat.empty b{color:#ff4757}
+  #bombStat.empty{border-color:#ff4757;color:#ff6b81;background:#2a0d12}
+  #bombStat.empty b{color:#ff4757}
   /* Floating joystick */
   #joyZone{position:absolute;left:0;top:0;bottom:0;width:58%;z-index:5;touch-action:none}
   #floatJoy{position:absolute;width:124px;height:124px;border-radius:50%;background:rgba(0,0,0,.30);border:2px solid rgba(255,255,255,.30);pointer-events:none;opacity:0;transition:opacity .28s ease;transform:translate(-50%,-50%);backdrop-filter:blur(2px)}
@@ -116,6 +117,8 @@
     <div class="pill">
       <div class="stat"><span>💎</span> <b id="rupees">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">rupees</span></div>
       <div class="stat hidden" id="arrowStat" aria-label="Arrows"><span>🏹</span> <b id="arrowCount">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">arrows</span></div>
+      <div class="stat hidden" id="bombStat" aria-label="Bombs"><span>💣</span> <b id="bombCount">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">bombs</span></div>
+      <div class="stat hidden" id="keyStat" aria-label="Small keys"><span>🔑</span> <b id="keyCount">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">keys</span></div>
       <div class="stat" id="invStat">🎒 <b id="inv">—</b></div>
       <div class="stat">⚔️ <b id="kills">0</b></div>
       <button class="icon-btn" id="tuningBtn" aria-label="Tuning settings">⚙️</button>
@@ -135,7 +138,7 @@
       <div class="card">
         <div style="font-size:44px;line-height:1">🗡️ 🌿 💎</div>
         <h1>Sword in the <span>Lake</span></h1>
-        <p>The overworld has grown: a <b>town</b> with a shop and villagers, the <b>Lost Woods</b>, open <b>Hyrule Field</b>, the sandy <b>Gerudo Drylands</b>, and <b>Lake Hylia's shore</b> — all connected by dirt roads. A banner names each zone as you enter it. Somewhere in the lake, a sword waits — but that claim is a long way off.</p>
+        <p>The overworld has grown: a <b>town</b> with a shop and villagers, the <b>Lost Woods</b>, open <b>Hyrule Field</b>, the sandy <b>Gerudo Drylands</b>, and <b>Lake Hylia's shore</b> — all connected by dirt roads. A banner names each zone as you enter it. A cave on the lake's north shore leads down into the <b>Lakebed Cavern</b>. Somewhere in the lake, a sword waits — but that claim is a long way off.</p>
         <div class="how">
           <div><b>📱 On phone</b><br>Touch anywhere on the left side — a floating stick appears under your thumb. Gold button swings the sword; the round ITEM button uses whatever you've equipped from your bag.</div>
           <div><b>🎯 Free-angle attacks</b><br>You attack at the exact angle you're moving — diagonals and everything in between, not just up/down/left/right. Stop moving and you keep facing that angle, so you can line up a swing, boomerang, or arrow and fire standing still.</div>
@@ -145,6 +148,8 @@
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
           <div><b>🌾 Tall grass</b><br>Waist-high patches rustle in the field and woods — you <i>wade</i> through them, half-sunk and slower, like the old games. Slash them for loot; they regrow.</div>
           <div><b>👾 Enemies</b><br>Slimes each move in their own pattern: field slimes hop and pause, woods slimes stalk in bursts, desert slimes telegraph and charge, lake slimes dart. New in the Field: <b>rock-spitters</b> walk a straight line, pause, and spit a rock at you — face the shot with your shield up-front to deflect it.</div>
+          <div><b>🕳️ Lakebed Cavern</b><br>A cave mouth on Lake Hylia's <b>north shore</b> leads down into a dungeon of single-screen rooms. Locked doors want <b>small keys</b> 🔑 — clear a sealed room to earn one. <b>Bombs</b> 💣 wait in a chest inside: they crack <b>cracked walls</b> (look for the fracture lines) and blast anything close — including you, so step back. Something big guards a Heart Container at the far end.</div>
+          <div><b>🗡️ The sword in the lake</b><br>A sword rests blade-up on a stone pedestal in the middle of Lake Hylia, glinting in the sun. The water around it is far too deep to wade — you can see it, but something is missing before it can be claimed.</div>
           <div><b>🗺️ Getting around</b><br>Follow the dirt roads between zones, and watch the minimap — the gold dot is the shop. Every tree blocks exactly where its trunk is drawn, every rock and cactus at its drawn core — walk right up under a canopy until your feet meet the trunk. Trees or rocks planted touching each other join trunk-to-trunk into one straight bar that follows the trunks, so press diagonally and you'll ease around its rounded ends and off the end of a tree wall smoothly, no catching, no lurch. Trees that only touch at a corner don't join at all — the gap between their trunks is open ground, so you can slip through diagonally. Go around the outside of a clump, never between side-by-side trees.</div>
         </div>
         <button class="cta" id="startBtn">▶ &nbsp;Start Adventure</button>
@@ -243,12 +248,12 @@ function beep(freq,dur,type,vol){
     o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+(dur||0.08));
   }catch(e){}
 }
-const sfx={ swing(){beep(520,.07,"square",.05); setTimeout(()=>beep(280,.06,"square",.04),30)}, hit(){beep(160,.1,"sawtooth",.08)}, coin(){beep(880,.07,"square",.06); setTimeout(()=>beep(1320,.12,"square",.06),60)}, hurt(){beep(110,.18,"sawtooth",.09)}, die(){beep(300,.12,"square",.07); setTimeout(()=>beep(180,.18,"square",.07),90)}, pop(){beep(660,.06,"sine",.06)}, buy(){beep(740,.08,"square",.06); setTimeout(()=>beep(990,.08,"square",.06),70); setTimeout(()=>beep(1320,.14,"square",.06),140)}, twang(){beep(190,.09,"sawtooth",.07); setTimeout(()=>beep(90,.08,"sawtooth",.05),40)}, whoosh(){beep(340,.05,"sine",.05); setTimeout(()=>beep(430,.05,"sine",.05),60); setTimeout(()=>beep(340,.05,"sine",.05),120)}, rustle(){beep(1200,.03,"sine",.015)}, denied(){beep(140,.12,"square",.06)}, spit(){beep(300,.07,"square",.055); setTimeout(()=>beep(190,.06,"square",.045),45)}, clang(){beep(1180,.06,"square",.06); setTimeout(()=>beep(820,.09,"square",.05),35)} };
+const sfx={ swing(){beep(520,.07,"square",.05); setTimeout(()=>beep(280,.06,"square",.04),30)}, hit(){beep(160,.1,"sawtooth",.08)}, coin(){beep(880,.07,"square",.06); setTimeout(()=>beep(1320,.12,"square",.06),60)}, hurt(){beep(110,.18,"sawtooth",.09)}, die(){beep(300,.12,"square",.07); setTimeout(()=>beep(180,.18,"square",.07),90)}, pop(){beep(660,.06,"sine",.06)}, buy(){beep(740,.08,"square",.06); setTimeout(()=>beep(990,.08,"square",.06),70); setTimeout(()=>beep(1320,.14,"square",.06),140)}, twang(){beep(190,.09,"sawtooth",.07); setTimeout(()=>beep(90,.08,"sawtooth",.05),40)}, whoosh(){beep(340,.05,"sine",.05); setTimeout(()=>beep(430,.05,"sine",.05),60); setTimeout(()=>beep(340,.05,"sine",.05),120)}, rustle(){beep(1200,.03,"sine",.015)}, denied(){beep(140,.12,"square",.06)}, spit(){beep(300,.07,"square",.055); setTimeout(()=>beep(190,.06,"square",.045),45)}, clang(){beep(1180,.06,"square",.06); setTimeout(()=>beep(820,.09,"square",.05),35)}, boom(){beep(64,.4,"sawtooth",.14); setTimeout(()=>beep(46,.5,"triangle",.12),30)}, unlock(){beep(520,.07,"square",.06); setTimeout(()=>beep(780,.09,"square",.06),70); setTimeout(()=>beep(1040,.13,"square",.06),150)}, fanfare(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.16,"square",.07),i*110))}, chest(){beep(660,.09,"square",.06); setTimeout(()=>beep(880,.09,"square",.06),80); setTimeout(()=>beep(1100,.16,"square",.07),170)} };
 document.getElementById("soundBtn").onclick=function(){ soundOn=!soundOn; this.textContent=soundOn?"🔊":"🔇"; if(soundOn) sfx.pop(); };
 
 
 // ---------- Tuning (debug menu state — the whole game reads from TUNING) ----------
-const TUNING_DEFAULTS={hitPauseMs:75,knockbackForce:300,enemySpeedMul:1,aggroRangeMul:1,playerSpeed:175,swordCooldownSec:0.32,tallGrassFactor:0.76,enemyRespawnSec:6,grassRegrowSec:9,boomerangStunSec:2.5,showAggroRings:false,showCollisionBoxes:false};
+const TUNING_DEFAULTS={hitPauseMs:75,knockbackForce:300,enemySpeedMul:1,aggroRangeMul:1,playerSpeed:175,swordCooldownSec:0.32,tallGrassFactor:0.76,enemyRespawnSec:6,grassRegrowSec:9,boomerangStunSec:2.5,bombFuseSec:1.2,bombRadiusTiles:1.5,bombStartCount:10,bombMax:30,showAggroRings:false,showCollisionBoxes:false};
 const TUNING=Object.assign({},TUNING_DEFAULTS);
 try{ const saved=JSON.parse(localStorage.getItem("littleLegendTuning")||"null"); if(saved) Object.keys(TUNING_DEFAULTS).forEach(k=>{ if(typeof saved[k]===(typeof TUNING_DEFAULTS[k])) TUNING[k]=saved[k]; }); }catch(e){}
 function saveTuning(){ try{ localStorage.setItem("littleLegendTuning", JSON.stringify(tuningExportObject())); }catch(e){} }
@@ -263,6 +268,10 @@ const TUNE_DEFS=[
   {key:"enemyRespawnSec",label:"Enemy respawn time",min:1,max:20,step:0.5,unit:" s"},
   {key:"grassRegrowSec",label:"Grass regrow time",min:1,max:30,step:0.5,unit:" s"},
   {key:"boomerangStunSec",label:"Boomerang stun duration",min:0,max:5,step:0.1,unit:" s"},
+  {key:"bombFuseSec",label:"Bomb fuse time",min:0.4,max:3,step:0.1,unit:" s"},
+  {key:"bombRadiusTiles",label:"Bomb blast radius",min:0.8,max:2.5,step:0.1,unit:" tiles"},
+  {key:"bombStartCount",label:"Bombs from the dungeon chest",min:1,max:30,step:1,unit:""},
+  {key:"bombMax",label:"Max bombs carried",min:5,max:60,step:1,unit:""},
   {key:"showAggroRings",label:"Always show aggro rings",type:"toggle"},
   {key:"showCollisionBoxes",label:"Show collision boxes",type:"toggle"}
 ];
@@ -312,6 +321,7 @@ function importTuning(){
 const canvas=document.getElementById("game"), ctx=canvas.getContext("2d");
 const mini=document.getElementById("minimap"), mctx=mini.getContext("2d");
 const TILE=40, COLS=72, ROWS=48, WORLD_W=COLS*TILE, WORLD_H=ROWS*TILE;
+let inDungeon=false; // mode flag, declared early: load-time world building already calls isSolidAt()
 let W=960,H=540,DPR=1;
 function resize(){
   const r=document.getElementById("stage").getBoundingClientRect();
@@ -371,7 +381,7 @@ function buildWorld(){
 buildWorld();
 const shopDoor={x:(SHOP.tx+SHOP.w/2)*TILE, y:(SHOP.ty+SHOP.h)*TILE+8};
 function pointInBuilding(px,py){ return buildings.some(b=> px>b.x+2 && px<b.x+b.wpx-2 && py>b.y+12 && py<b.y+b.hpx); }
-function isSolidAt(px,py){ const tx=Math.floor(px/TILE), ty=Math.floor(py/TILE); if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return true; if(pointInBuilding(px,py)) return true; return grid[ty][tx]!==0; }
+function isSolidAt(px,py){ if(inDungeon) return dungeonPointSolid(px,py); const tx=Math.floor(px/TILE), ty=Math.floor(py/TILE); if(tx<0||ty<0||tx>=COLS||ty>=ROWS) return true; if(pointInBuilding(px,py)) return true; return grid[ty][tx]!==0; }
 function collides(x,y,r){ return isSolidAt(x-r,y-r)||isSolidAt(x+r,y-r)||isSolidAt(x-r,y+r)||isSolidAt(x+r,y+r); }
 function tryMove(ent,dx,dy,r){
   if(!collides(ent.x+dx,ent.y,r)) ent.x+=dx;
@@ -710,13 +720,14 @@ function collidesPlayerAt(nx,ny){
 // blocked too is the sub-step lost (a genuine head-on stop). There is
 // no burst when a wall ends: the frame the wall releases, the player
 // simply takes the same size step they have been taking all along.
-function tryMovePlayer(dx,dy){
+function tryMovePlayer(dx,dy,collideFn){
+  const cf=collideFn||collidesPlayerAt;
   if(dx===0&&dy===0) return;
   const dist=Math.hypot(dx,dy);
   const steps=Math.max(1,Math.ceil(dist/2));
   const sx=dx/steps, sy=dy/steps;
   for(let s=0;s<steps;s++){
-    if(!collidesPlayerAt(player.x+sx,player.y+sy)){ player.x+=sx; player.y+=sy; continue; }
+    if(!cf(player.x+sx,player.y+sy)){ player.x+=sx; player.y+=sy; continue; }
     let moved=false;
     if(sx!==0 && sy!==0){
       // Blocked diagonal: steer along the tangent at full step length.
@@ -726,17 +737,19 @@ function tryMovePlayer(dx,dy){
           const a=base+sgn*k*0.2, vx=Math.cos(a)*len, vy=Math.sin(a)*len;
           // Only accept a rotation that still makes progress along the input.
           if(vx*sx+vy*sy<=0) continue;
-          if(!collidesPlayerAt(player.x+vx,player.y+vy)){ player.x+=vx; player.y+=vy; moved=true; }
+          if(!cf(player.x+vx,player.y+vy)){ player.x+=vx; player.y+=vy; moved=true; }
         }
       }
     }
     if(!moved){
-      if(sx!==0 && !collidesPlayerAt(player.x+sx,player.y)){ player.x+=sx; moved=true; }
-      else if(sy!==0 && !collidesPlayerAt(player.x,player.y+sy)){ player.y+=sy; moved=true; }
+      if(sx!==0 && !cf(player.x+sx,player.y)){ player.x+=sx; moved=true; }
+      else if(sy!==0 && !cf(player.x,player.y+sy)){ player.y+=sy; moved=true; }
     }
     // If nothing was free, this sub-step is simply lost (head-on block).
   }
-  player.x=Math.max(20,Math.min(WORLD_W-20,player.x)); player.y=Math.max(20,Math.min(WORLD_H-20,player.y));
+  // Overworld only: clamp to the world. The dungeon passes its own collision
+  // function and handles its edges itself (door transitions live out there).
+  if(!collideFn){ player.x=Math.max(20,Math.min(WORLD_W-20,player.x)); player.y=Math.max(20,Math.min(WORLD_H-20,player.y)); }
 }
 
 // ---------- Tall grass (ALTTP-style wading grass) ----------
@@ -774,6 +787,8 @@ const player={x:13*TILE+20,y:13*TILE+20,r:13,speed:175,dir:"down",aim:Math.PI/2,
 let rupeesCount=0, kills=0, started=false, shopOpen=false, lastTime=0;
 let grass=[], enemies=[], pickups=[], particles=[], floaters=[], projectiles=[], eProjectiles=[], npcs=[];
 let hasBoomerang=false, hasBow=false, arrows=0, heartBought=false, weaponCd=0, equippedItem=null, bagOpen=false, tuningOpen=false, hitPauseT=0;
+let hasBombs=false, bombCount=0, smallKeys=0, liveBombs=[], explosions=[];
+let owEnemies=null, dRoom=null, dBlock=null, fadeT=0, unlockToastT=0, caveLatch=false;
 let currentZoneKey="";
 function spawnGrass(){
   grass=[]; let tries=0;
@@ -787,7 +802,7 @@ function spawnGrass(){
     grass.push({x,y,alive:true,timer:0,phase:Math.random()*Math.PI*2,scale:rand(.85,1.15)});
   }
 }
-const ENEMY_TYPES={green:{hp:3,speed:72,aggro:145}, red:{hp:5,speed:94,aggro:165}, blue:{hp:3,speed:110,aggro:155}, purple:{hp:5,speed:82,aggro:160}, shooter:{hp:3,speed:52,aggro:230}};
+const ENEMY_TYPES={green:{hp:3,speed:72,aggro:145}, red:{hp:5,speed:94,aggro:165}, blue:{hp:3,speed:110,aggro:155}, purple:{hp:5,speed:82,aggro:160}, shooter:{hp:3,speed:52,aggro:230}, king:{hp:26,speed:60,aggro:215}};
 function makeEnemy(tx,ty,type){
   const s=ENEMY_TYPES[type];
   return {x:tx*TILE+20,y:ty*TILE+20,spawnX:tx*TILE+20,spawnY:ty*TILE+20,r:14,speed:s.speed,hp:s.hp,maxHp:s.hp,dirX:0,dirY:1,changeT:rand(.5,2),aggro:false,aggroR:s.aggro,baseAggro:s.aggro,respawnT:0,alive:true,flash:0,stunT:0,type:type,wob:Math.random()*10,state:type==="shooter"?"move":"pause",stateT:type==="shooter"?rand(.8,1.3):rand(.3,.9),pDirX:0,pDirY:1,kbX:0,kbY:0,immuneT:0,chargeDX:0,chargeDY:0,chargeLeft:0,faceAng:Math.PI/2,shootCd:rand(.4,1.2)};
@@ -830,10 +845,12 @@ function dropLoot(x,y,fromEnemy){
     if(roll<0.66){ const v=Math.random()<0.65?1:(Math.random()<0.75?5:20); spawnPickup(x,y,"rupee",v); }
     else if(roll<0.78) spawnPickup(x,y,"heart",1);
     else if(roll<0.88 && hasBow) spawnPickup(x,y,"arrows",5);
+    else if(roll<0.94 && hasBombs) spawnPickup(x,y,"bombs",3);
   } else {
     if(roll<0.36){ const v=Math.random()<0.8?1:5; spawnPickup(x,y,"rupee",v); }
     else if(roll<0.43) spawnPickup(x,y,"heart",1);
     else if(roll<0.47 && hasBow) spawnPickup(x,y,"arrows",3);
+    else if(roll<0.52 && hasBombs) spawnPickup(x,y,"bombs",3);
   }
 }
 function spawnPickup(x,y,type,value){ pickups.push({x:x+rand(-8,8),y:y+rand(-8,8),type,value,vx:rand(-40,40),vy:rand(-70,-20),t:0,life:16,grabbed:false}); }
@@ -848,7 +865,7 @@ function hurtEnemy(en,dmg,ang,opts){
   en.hp-=dmg; en.flash=.24;
   if(opts.sword){ en.immuneT=0.4; hitPauseT=Math.max(hitPauseT, TUNING.hitPauseMs/1000); }
   if(opts.stun) en.stunT=Math.max(en.stunT,opts.stun);
-  const kb=(opts.kb!==undefined)?opts.kb:120;
+  const kb=((opts.kb!==undefined)?opts.kb:120)*(en.kbMul||1);
   if(kb>0){ // decaying knockback slide; interrupts whatever pattern state the enemy was in
     en.kbX=Math.cos(ang)*kb; en.kbY=Math.sin(ang)*kb;
     en.state = en.type==="red" ? "recover" : (en.type==="purple" ? "freeze" : "pause");
@@ -909,6 +926,7 @@ function doEquippedItem(){
   if(!started||player.hp<=0) return;
   if(equippedItem==="boom") doBoomerang();
   else if(equippedItem==="bow") doBow();
+  else if(equippedItem==="bombs") doBomb();
   else showToast("🎒 Your bag is empty — the town shop sells a boomerang and a bow!");
 }
 function doBoomerang(){
@@ -969,15 +987,23 @@ function updateHearts(){
   document.getElementById("hearts").innerHTML=html;
 }
 function updateInv(){
-  const parts=[]; if(hasBoomerang) parts.push("🪃"); if(hasBow) parts.push("🏹×"+arrows);
+  const parts=[]; if(hasBoomerang) parts.push("🪃"); if(hasBow) parts.push("🏹×"+arrows); if(hasBombs) parts.push("💣×"+bombCount);
   document.getElementById("inv").textContent=parts.length?parts.join(" "):"—";
   const as=document.getElementById("arrowStat");
   as.classList.toggle("hidden",!hasBow);
   as.classList.toggle("empty",hasBow&&arrows<=0);
   document.getElementById("arrowCount").textContent=arrows;
+  const bs=document.getElementById("bombStat");
+  bs.classList.toggle("hidden",!hasBombs);
+  bs.classList.toggle("empty",hasBombs&&bombCount<=0);
+  document.getElementById("bombCount").textContent=bombCount;
+  const ks=document.getElementById("keyStat");
+  ks.classList.toggle("hidden",!(inDungeon&&smallKeys>0));
+  document.getElementById("keyCount").textContent=smallKeys;
   const ib=document.getElementById("itemBtn");
   if(equippedItem==="boom"){ ib.textContent="🪃"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: boomerang"); }
   else if(equippedItem==="bow"){ ib.textContent="🏹"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: bow"); }
+  else if(equippedItem==="bombs"){ ib.textContent="💣"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: bombs"); }
   else { ib.textContent="—"; ib.classList.add("none"); ib.setAttribute("aria-label","Use equipped item (none equipped)"); }
   if(bagOpen) renderBag();
 }
@@ -989,11 +1015,12 @@ function renderBag(){
   const box=document.getElementById("bagItems"); box.innerHTML="";
   const items=[
     {id:"boom", icon:"🪃", name:"Boomerang", desc:"Flies out and comes back. Stuns slimes, snatches far-off rupees, shreds grass.", owned:hasBoomerang},
-    {id:"bow", icon:"🏹", name:"Bow", desc:"Long-range, double damage. Arrows in bag: "+arrows, owned:hasBow}
+    {id:"bow", icon:"🏹", name:"Bow", desc:"Long-range, double damage. Arrows in bag: "+arrows, owned:hasBow},
+    {id:"bombs", icon:"💣", name:"Bombs", desc:"Set one down at your feet: it cracks cracked walls and blasts everything close — including you. In bag: "+bombCount, owned:hasBombs, lockedDesc:"Not owned yet — a chest in the Lakebed Cavern holds them."}
   ];
   items.forEach(it=>{
     const b=document.createElement("button"); b.className="bag-item"+(it.owned?"":" locked")+(equippedItem===it.id?" equipped":"");
-    b.innerHTML=`<div class="ic">${it.icon}</div><div class="info"><b>${it.name}</b><div>${it.owned?it.desc:"Not owned yet — the town shop sells it."}</div></div>`+(equippedItem===it.id?`<span class="equip-tag">Equipped</span>`:"");
+    b.innerHTML=`<div class="ic">${it.icon}</div><div class="info"><b>${it.name}</b><div>${it.owned?it.desc:(it.lockedDesc||"Not owned yet — the town shop sells it.")}</div></div>`+(equippedItem===it.id?`<span class="equip-tag">Equipped</span>`:"");
     if(it.owned) b.onclick=()=>{ equippedItem=it.id; sfx.pop(); closeBag(); updateInv(); showToast(it.icon+" "+it.name+" equipped to the ITEM button"); };
     box.appendChild(b);
   });
@@ -1047,6 +1074,7 @@ document.getElementById("tuningImport").addEventListener("click",importTuning);
 document.getElementById("tuningReset").addEventListener("click",()=>{ Object.assign(TUNING,TUNING_DEFAULTS); saveTuning(); buildTuningUI(); showToast("⚙️ Tuning reset to defaults"); sfx.pop(); });
 
 function resetGame(){
+  if(inDungeon){ inDungeon=false; dRoom=null; dBlock=null; liveBombs=[]; explosions=[]; }
   player.x=13*TILE+20; player.y=13*TILE+20; player.hp=player.maxHp; player.invuln=0; player.attackT=0; player.itemT=0; player.aim=Math.PI/2; player.dir="down";
   pickups=[]; particles=[]; floaters=[]; projectiles=[]; eProjectiles=[];
   tallCells.forEach(c=>{ c.alive=true; c.timer=0; });
@@ -1054,6 +1082,575 @@ function resetGame(){
   currentZoneKey="";
 }
 
+
+// ---------- The Lakebed Cavern (dungeon), bombs, and the sword in the lake ----------
+// This is the first dungeon BUILT, not dungeon #1 in the finished game's
+// progression: it is a mid-game dungeon carrying the lake sword arc, so the
+// sword appears in the lake now but is NOT claimable in this pass. The
+// dungeon's own payoffs are its own: the Bombs and a Heart Container.
+// Rooms are single screens (18x12 tiles) on a grid, joined by doorways in the
+// middle of shared walls. All progress lives in dState for the session: the
+// opened locked door, bombed cracks, looted chests, cleared shutter rooms,
+// the block puzzle, the dead boss and the taken Heart Container all persist
+// across leaving and re-entering. Ordinary room enemies respawn fresh each
+// time a room is entered (classic), except cleared shutter rooms and the boss.
+const RW=18, RH=12, ROOM_W=RW*TILE, ROOM_H=RH*TILE;
+const GAP_COLS=[8,9], GAP_ROWS=[5,6];
+const CAVE={tx:61,ty:30};        // cave entrance tile, Lake Hylia north shore
+const SWORD_TILE={tx:61,ty:38};  // the sword's pedestal, mid-lake; every neighbour tile is deep water
+const WARP_POS={x:ROOM_W/2, y:100};
+let dState=freshDungeonState();
+function freshDungeonState(){ return {lockedOpen:false, cracks:{}, chests:{}, cleared:{}, bossDead:false, heartTaken:false, puzzleDone:false, visited:{}, flags:{}}; }
+const DG_ROOMS={
+  entrance:{gx:1,gy:5,doors:{n:"open",s:"exit"},enemies:[]},
+  central:{gx:1,gy:4,doors:{n:"locked",w:"open",e:"open",s:"open"},enemies:[["green",5,3],["green",12,7]],blocks:[[4,9],[13,9]]},
+  west:{gx:0,gy:4,doors:{e:"open",n:"crack"},crackIds:{n:"crackSecret"},shutterRoom:true,reward:"key",enemies:[["green",5,4],["green",9,7],["green",13,3]],blocks:[[3,9],[14,9]]},
+  east:{gx:2,gy:4,doors:{w:"open",e:"open"},puzzle:true,chest:{id:"chestBombs",kind:"bombsItem",tx:8,ty:1},enemies:[["shooter",15,9]]},
+  store:{gx:3,gy:4,doors:{w:"open"},chest:{id:"chestStore",kind:"bombs10",tx:13,ty:2},enemies:[["green",6,3],["green",11,7]],blocks:[[5,9]]},
+  corridor:{gx:1,gy:3,doors:{s:"open",n:"crack"},crackIds:{n:"crackReq"},enemies:[["shooter",9,6]],blocks:[[4,5],[13,6]]},
+  upper:{gx:1,gy:2,doors:{s:"crack",n:"open"},crackIds:{s:"crackReq"},chest:{id:"chestUpper",kind:"bombs10",tx:15,ty:2},enemies:[["shooter",4,3],["shooter",13,7],["green",9,6]]},
+  preboss:{gx:1,gy:1,doors:{s:"open",n:"shutter"},shutterRoom:true,enemies:[["purple",5,4],["purple",12,6],["shooter",9,3]]},
+  boss:{gx:1,gy:0,doors:{s:"open"},boss:true,enemies:[],blocks:[[4,3],[13,3],[4,8],[13,8]]},
+  secret:{gx:0,gy:3,doors:{s:"crack"},crackIds:{s:"crackSecret"},chest:{id:"chestSecret",kind:"rupees50",tx:8,ty:2},enemies:[]}
+};
+const DG_BY_POS={}; Object.keys(DG_ROOMS).forEach(id=>{ DG_BY_POS[DG_ROOMS[id].gx+","+DG_ROOMS[id].gy]=id; });
+
+// ---------- Bombs (the dungeon item) ----------
+function doBomb(){
+  if(!hasBombs||weaponCd>0||player.hp<=0||shopOpen||bagOpen||tuningOpen){ if(started&&!hasBombs) showToast("💣 You don't have bombs — a chest in the Lakebed Cavern holds them"); return; }
+  if(bombCount<=0){ showToast("Out of bombs! Enemies and grass sometimes drop more"); sfx.denied(); return; }
+  bombCount--; updateInv(); weaponCd=0.35; player.itemT=weaponCd; sfx.pop();
+  liveBombs.push({x:player.x,y:player.y+8,t:0,fuse:TUNING.bombFuseSec,done:false});
+}
+function processBombs(dt){
+  liveBombs.forEach(b=>{ b.t+=dt; if(b.t>=b.fuse&&!b.done){ b.done=true; explodeBomb(b); } });
+  liveBombs=liveBombs.filter(b=>!b.done);
+  explosions.forEach(e=>{ e.t+=dt; });
+  explosions=explosions.filter(e=>e.t<e.life);
+}
+function explodeBomb(b){
+  const R=TUNING.bombRadiusTiles*TILE;
+  explosions.push({x:b.x,y:b.y,r:R,t:0,life:0.3});
+  sfx.boom(); burst(b.x,b.y,"#fb923c",18); burst(b.x,b.y,"#f8fafc",10); burst(b.x,b.y,"#78716c",8);
+  enemies.forEach(en=>{ if(en.alive && Math.hypot(en.x-b.x,en.y-b.y)<R+en.r*0.6) hurtEnemy(en,2,Math.atan2(en.y-b.y,en.x-b.x),{kb:200}); });
+  if(player.hp>0 && player.invuln<=0 && Math.hypot(player.x-b.x,player.y-b.y)<R){
+    player.hp-=1; player.invuln=1.0; updateHearts(); sfx.hurt();
+    const a=Math.atan2(player.y-b.y,player.x-b.x);
+    tryMovePlayer(Math.cos(a)*30,Math.sin(a)*30, inDungeon?collidesDungeonAt:undefined);
+    burst(player.x,player.y,"#f87171",8); showToast("💥 The blast got you too!");
+    if(player.hp<=0){ document.getElementById("deadText").textContent=`You collected ${rupeesCount} rupees and defeated ${kills} enemies.`; document.getElementById("deadOverlay").classList.remove("hidden"); }
+  }
+  if(inDungeon&&dRoom){
+    // Bombable cracked walls: only a blast opens them — sword, boomerang and
+    // bow hits never do (they just stop at the wall like anywhere else).
+    let opened=false;
+    dRoom.crackTiles.slice().forEach(ct=>{
+      const cx=ct.tx*TILE+20, cy=ct.ty*TILE+20;
+      if(Math.hypot(cx-b.x,cy-b.y)<R+26 && !dState.cracks[ct.id]){
+        dState.cracks[ct.id]=true; opened=true;
+        burst(cx,cy,"#a8a29e",14); burst(cx,cy,"#57534e",8);
+        floater(cx,cy-14,"💥 Cracked wall destroyed!","#f6c453");
+      }
+    });
+    if(opened){ buildRoomTiles(); sfx.fanfare(); }
+  } else {
+    cutGrassAt(b.x,b.y,R);
+  }
+}
+function drawBombsFx(camX,camY,t){
+  liveBombs.forEach(b=>{ const sx=b.x-camX, sy=b.y-camY; const urg=b.t/b.fuse;
+    if(urg>0.68 && Math.floor(t*11)%2===0){ ctx.fillStyle="rgba(255,71,87,.5)"; ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.fill(); }
+    ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+7);
+  });
+  explosions.forEach(e=>{ const k=e.t/e.life, sx=e.x-camX, sy=e.y-camY; ctx.globalAlpha=1-k;
+    ctx.fillStyle="#fb923c"; ctx.beginPath(); ctx.arc(sx,sy,e.r*(0.35+0.65*k),0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fef08a"; ctx.beginPath(); ctx.arc(sx,sy,e.r*0.5*(0.35+0.65*k),0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1;
+  });
+}
+
+// ---------- Dungeon collision ----------
+// The dungeon's solid geometry is generated from what the room draws, the
+// same rule as the overworld: perimeter wall tiles except at door gaps,
+// interior stone blocks, the chest, the puzzle shutters, and the pushable
+// block. A 1-tile margin ring surrounds the room so the player can step
+// through an open doorway before the room transition triggers.
+function buildRoomTiles(){
+  const def=dRoom.def, id=dRoom.id;
+  const solid=[];
+  for(let ty=-1;ty<=RH;ty++){ solid[ty+1]=[]; for(let tx=-1;tx<=RW;tx++){
+    solid[ty+1][tx+1]=(tx<0||ty<0||tx>=RW||ty>=RH||tx===0||ty===0||tx===RW-1||ty===RH-1);
+  } }
+  const gapTiles=new Set();
+  const sideTiles={ n:GAP_COLS.map(c=>[c,0]), s:GAP_COLS.map(c=>[c,RH-1]), w:GAP_ROWS.map(r=>[0,r]), e:GAP_ROWS.map(r=>[RW-1,r]) };
+  const sideOut={ n:GAP_COLS.map(c=>[c,-1]), s:GAP_COLS.map(c=>[c,RH]), w:GAP_ROWS.map(r=>[-1,r]), e:GAP_ROWS.map(r=>[RW,r]) };
+  dRoom.crackTiles=[]; dRoom.doorTiles={};
+  Object.keys(sideTiles).forEach(side=>{
+    const t=def.doors[side]; if(!t) return;
+    let open=false;
+    if(t==="open"||t==="exit") open=true;
+    else if(t==="locked") open=dState.lockedOpen;
+    else if(t==="crack"){ open=!!dState.cracks[def.crackIds[side]];
+      if(!open) sideTiles[side].forEach(([tx,ty])=>dRoom.crackTiles.push({tx,ty,id:def.crackIds[side]})); }
+    else if(t==="shutter") open=!!dState.cleared[id];
+    if(dRoom.sealed) open=false;
+    dRoom.doorTiles[side]={tiles:sideTiles[side], state:open?"open":t};
+    if(open){
+      sideTiles[side].forEach(([tx,ty])=>{ solid[ty+1][tx+1]=false; gapTiles.add(tx+","+ty); });
+      sideOut[side].forEach(([tx,ty])=>{ solid[ty+1][tx+1]=false; });
+    }
+  });
+  (def.blocks||[]).forEach(([tx,ty])=>{ solid[ty+1][tx+1]=true; });
+  if(def.chest) solid[def.chest.ty+1][def.chest.tx+1]=true;
+  dRoom.shutterTiles=[];
+  if(def.puzzle&&!dState.puzzleDone){ for(let tx=1;tx<RW-1;tx++){ solid[2+1][tx+1]=true; dRoom.shutterTiles.push({tx,ty:2}); } }
+  dRoom.solid=solid; dRoom.gapTiles=gapTiles;
+}
+function dungeonPointSolid(px,py){
+  if(!dRoom||!dRoom.solid) return true;
+  const tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
+  if(tx<-1||ty<-1||tx>RW||ty>RH) return true;
+  if(dRoom.solid[ty+1][tx+1]) return true;
+  if(dBlock && px>dBlock.x && px<dBlock.x+TILE && py>dBlock.y && py<dBlock.y+TILE) return true;
+  return false;
+}
+function collidesDungeonAt(x,y){
+  if(!dRoom||!dRoom.solid) return true;
+  const f=playerFootRect(x,y);
+  const tx0=Math.floor(f.x/TILE), tx1=Math.floor((f.x+f.w-1)/TILE), ty0=Math.floor(f.y/TILE), ty1=Math.floor((f.y+f.h-1)/TILE);
+  for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
+    if(tx<-1||ty<-1||tx>RW||ty>RH) return true;
+    if(dRoom.solid[ty+1][tx+1]) return true;
+  }
+  if(dBlock){ const br={x:dBlock.x+2,y:dBlock.y+2,w:TILE-4,h:TILE-4}; if(rectsOverlap(f,br)) return true; }
+  return false;
+}
+
+// ---------- Dungeon flow ----------
+function enterDungeon(){
+  if(inDungeon) return;
+  inDungeon=true; owEnemies=enemies;
+  projectiles=[]; eProjectiles=[]; pickups=[]; liveBombs=[]; explosions=[];
+  loadRoom("entrance","s");
+  fadeT=0.3; currentZoneKey="dungeon";
+  showZone({name:"🕳️ Lakebed Cavern", sub:"Keys, bombs, and something big at the far end"});
+  updateInv();
+}
+function exitDungeon(){
+  inDungeon=false; dRoom=null; dBlock=null;
+  if(owEnemies) enemies=owEnemies;
+  projectiles=[]; eProjectiles=[]; pickups=[]; liveBombs=[]; explosions=[];
+  player.x=CAVE.tx*TILE+20; player.y=CAVE.ty*TILE+36; player.aim=Math.PI/2; syncDirFromAim();
+  caveLatch=true; currentZoneKey="";
+  showToast("Back at Lake Hylia's shore");
+  updateInv();
+}
+function loadRoom(id,fromSide){
+  const def=DG_ROOMS[id];
+  dRoom={id,def,sealed:false,solid:null,crackTiles:[],doorTiles:{},shutterTiles:[],kingRef:null};
+  dState.visited[id]=true;
+  if(fromSide==="s"){ player.x=ROOM_W/2; player.y=ROOM_H-TILE-20; player.aim=-Math.PI/2; }
+  else if(fromSide==="n"){ player.x=ROOM_W/2; player.y=TILE+20; player.aim=Math.PI/2; }
+  else if(fromSide==="w"){ player.x=TILE+20; player.y=ROOM_H/2; player.aim=0; }
+  else if(fromSide==="e"){ player.x=ROOM_W-TILE-20; player.y=ROOM_H/2; player.aim=Math.PI; }
+  syncDirFromAim();
+  projectiles=[]; eProjectiles=[]; pickups=[]; liveBombs=[];
+  dBlock=null;
+  if(def.puzzle){ const st=dState.puzzleDone?{tx:13,ty:6}:{tx:4,ty:6}; dBlock={tx:st.tx,ty:st.ty,x:st.tx*TILE,y:st.ty*TILE,slide:null}; }
+  buildRoomTiles();
+  enemies=[];
+  if(def.boss){
+    if(!dState.bossDead){
+      const k=makeEnemy(9,5,"king"); k.r=30; k.kbMul=0.2; k.isKing=true; k.spawnT=3;
+      enemies.push(k); dRoom.kingRef=k;
+      if(!dState.flags.bossSeen){ dState.flags.bossSeen=true; showToast("👑 King Slime blocks the way!"); }
+    } else if(!dState.heartTaken){
+      pickups.push({x:WARP_POS.x,y:220,type:"heartcontainer",value:1,vx:0,vy:0,t:0,life:9999,grabbed:false});
+    }
+  } else if(!(def.shutterRoom&&dState.cleared[id])){
+    def.enemies.forEach(([type,tx,ty])=>enemies.push(makeEnemy(tx,ty,type)));
+    enemies.forEach(en=>findOpen(en));
+  }
+  if(id==="secret"&&!dState.flags.secretHeart) pickups.push({x:9*TILE+20,y:6*TILE+20,type:"heartOnce",value:1,vx:0,vy:0,t:0,life:9999,grabbed:false});
+  updateInv();
+}
+function roomTransition(side){
+  const def=dRoom.def;
+  if(def.doors[side]==="exit"){ exitDungeon(); return; }
+  const dx=side==="w"?-1:side==="e"?1:0, dy=side==="n"?-1:side==="s"?1:0;
+  const nid=DG_BY_POS[(def.gx+dx)+","+(def.gy+dy)];
+  if(!nid) return;
+  loadRoom(nid, side==="n"?"s":side==="s"?"n":side==="w"?"e":"w");
+  fadeT=0.3;
+}
+function openChest(ch){
+  dState.chests[ch.id]=true; sfx.chest();
+  const cx=ch.tx*TILE+20, cy=ch.ty*TILE+20;
+  if(ch.kind==="bombsItem"){ hasBombs=true; bombCount=Math.max(bombCount,TUNING.bombStartCount); equippedItem="bombs"; floater(cx,cy-26,"💣 You got BOMBS!","#f6c453"); showToast("💣 Bombs! They're on the ITEM button — they crack cracked walls (and hurt!)"); }
+  else if(ch.kind==="bombs10"){ bombCount=Math.min(TUNING.bombMax,bombCount+10); floater(cx,cy-26,"💣 +10 bombs","#f6c453"); showToast("💣 Restocked: +10 bombs"); }
+  else if(ch.kind==="rupees50"){ rupeesCount+=50; document.getElementById("rupees").textContent=rupeesCount; floater(cx,cy-26,"💎 +50 rupees!","#7dd3fc"); showToast("💎 A hoard of rupees!"); }
+  burst(cx,cy,"#f6c453",10);
+  updateInv();
+}
+
+// ---------- Dungeon update ----------
+function updateDungeon(dt){
+  if(!started||shopOpen||bagOpen||tuningOpen) return;
+  if(hitPauseT>0){ hitPauseT-=dt; return; }
+  if(fadeT>0){ fadeT-=dt; return; }
+  player.attackCd=Math.max(0,player.attackCd-dt); player.attackT=Math.max(0,player.attackT-dt); player.itemT=Math.max(0,player.itemT-dt); player.invuln=Math.max(0,player.invuln-dt); weaponCd=Math.max(0,weaponCd-dt);
+  unlockToastT=Math.max(0,unlockToastT-dt);
+  let ix=joyVec.x, iy=joyVec.y;
+  if(keys["a"]||keys["arrowleft"]) ix-=1; if(keys["d"]||keys["arrowright"]) ix+=1; if(keys["w"]||keys["arrowup"]) iy-=1; if(keys["s"]||keys["arrowdown"]) iy+=1;
+  const len=Math.hypot(ix,iy); if(len>1){ix/=len;iy/=len;}
+  if(len>0.1){ player.aim=Math.atan2(iy,ix); syncDirFromAim(); }
+  tryMovePlayer(ix*TUNING.playerSpeed*dt, iy*TUNING.playerSpeed*dt, collidesDungeonAt);
+
+  // Pushable block: slides one tile, cardinally only, into free floor. While
+  // it rests on the floor switch the puzzle shutter stays open (dState).
+  if(dBlock&&dRoom.def.puzzle){
+    const B=dBlock, bcx=B.x+TILE/2, bcy=B.y+TILE/2;
+    if(B.slide){
+      B.slide.t+=dt; const k=Math.min(1,B.slide.t/0.22);
+      B.x=B.slide.fx+(B.slide.tx2-B.slide.fx)*k; B.y=B.slide.fy+(B.slide.ty2-B.slide.fy)*k;
+      if(k>=1){
+        B.tx+=B.slide.dx; B.ty+=B.slide.dy; B.x=B.tx*TILE; B.y=B.ty*TILE; B.slide=null;
+        if(B.tx===13&&B.ty===6&&!dState.puzzleDone){ dState.puzzleDone=true; buildRoomTiles(); sfx.fanfare(); showToast("The block clicks onto the switch — a shutter rumbles open!"); }
+        else sfx.pop();
+      }
+    } else if(!dState.puzzleDone){
+      let pdx=0, pdy=0;
+      if(ix>0.55&&Math.abs(iy)<0.5) pdx=1; else if(ix<-0.55&&Math.abs(iy)<0.5) pdx=-1;
+      else if(iy>0.55&&Math.abs(ix)<0.5) pdy=1; else if(iy<-0.55&&Math.abs(ix)<0.5) pdy=-1;
+      if(pdx||pdy){
+        const px=player.x, py=player.y+9;
+        const aligned = pdx!==0
+          ? (Math.abs(py-bcy)<22 && ((pdx>0&&px<bcx&&bcx-px<54)||(pdx<0&&px>bcx&&px-bcx<54)))
+          : (Math.abs(px-bcx)<22 && ((pdy>0&&py<bcy&&bcy-py<54)||(pdy<0&&py>bcy&&py-bcy<54)));
+        if(aligned){
+          const nx=B.tx+pdx, ny=B.ty+pdy;
+          const destSolid = nx<0||ny<0||nx>=RW||ny>=RH || dRoom.solid[ny+1][nx+1] || dRoom.gapTiles.has(nx+","+ny);
+          if(!destSolid){ B.slide={dx:pdx,dy:pdy,t:0,fx:B.x,fy:B.y,tx2:nx*TILE,ty2:ny*TILE}; sfx.rustle(); }
+        }
+      }
+    }
+  }
+
+  // Room transitions: the player has stepped out through a doorway.
+  if(player.x<-8) roomTransition("w");
+  else if(player.x>ROOM_W+8) roomTransition("e");
+  else if(player.y<-8) roomTransition("n");
+  else if(player.y>ROOM_H+8) roomTransition("s");
+  if(!inDungeon||!dRoom) return; // the transition left the dungeon entirely
+
+  // Locked door: pushing against it with a small key in hand opens it for
+  // good (and consumes the key); without one it just refuses.
+  if(dRoom.id==="central"&&!dState.lockedOpen){
+    if(player.y<86&&Math.abs(player.x-ROOM_W/2)<46&&(iy<-0.1||keys["w"]||keys["arrowup"])){
+      if(smallKeys>0){ smallKeys--; dState.lockedOpen=true; buildRoomTiles(); sfx.unlock(); showToast("🔑 You unlocked the door!"); updateInv(); }
+      else if(unlockToastT<=0){ unlockToastT=1.6; sfx.denied(); showToast("🔒 Locked — it needs a small key"); }
+    }
+  }
+
+  // Chests open by walking up to them.
+  const cdef=dRoom.def;
+  if(cdef.chest&&!dState.chests[cdef.chest.id]){
+    const cx=cdef.chest.tx*TILE+20, cy=cdef.chest.ty*TILE+20;
+    if(Math.hypot(player.x-cx,player.y-cy)<38) openChest(cdef.chest);
+  }
+
+  // Shutter rooms: once the player is well inside, the doors slam shut and
+  // only reopen when every enemy in the room is dead — permanently.
+  if(cdef.shutterRoom&&!dState.cleared[dRoom.id]){
+    if(!dRoom.sealed){
+      const nearDoor=(Math.abs(player.x-ROOM_W/2)<72&&(player.y<76||player.y>ROOM_H-76))||(Math.abs(player.y-ROOM_H/2)<72&&(player.x<76||player.x>ROOM_W-76));
+      if(!nearDoor&&enemies.some(e=>e.alive)){ dRoom.sealed=true; buildRoomTiles(); beep(90,.22,"sawtooth",.09); showToast("🚪 The doors slam shut!"); }
+    } else if(enemies.every(e=>!e.alive)){
+      dState.cleared[dRoom.id]=true; dRoom.sealed=false; buildRoomTiles(); sfx.fanfare();
+      if(cdef.reward==="key"){ pickups.push({x:ROOM_W/2,y:ROOM_H/2,type:"key",value:1,vx:0,vy:0,t:0,life:9999,grabbed:false}); floater(ROOM_W/2,ROOM_H/2-26,"🔑 A small key appeared!","#f6c453"); }
+      else showToast("The boss door creaks open…");
+    }
+  }
+
+  // Exit warp in the boss room, once the King Slime is dead.
+  if(dRoom.id==="boss"&&dState.bossDead&&Math.hypot(player.x-WARP_POS.x,player.y-WARP_POS.y)<28){ exitDungeon(); return; }
+
+  // Enemies (no respawn timers down here: a room's enemies are dealt with by
+  // leaving and re-entering, except cleared shutter rooms and the boss).
+  const pendingSpawns=[];
+  enemies.forEach(en=>{
+    if(!en.alive) return;
+    en.flash=Math.max(0,en.flash-dt); en.immuneT=Math.max(0,en.immuneT-dt); en.wob+=dt*6;
+    if(en.stunT>0){ en.stunT-=dt; return; }
+    const dist=Math.hypot(player.x-en.x, player.y-en.y);
+    const effAggro=en.baseAggro*TUNING.aggroRangeMul;
+    if(!en.aggro && dist<effAggro && player.hp>0){ en.aggro=true; floater(en.x,en.y-24,"!","#ffdf6b"); sfx.pop(); }
+    if(en.aggro && dist>effAggro+85) en.aggro=false;
+    if(en.kbX||en.kbY){
+      tryMove(en, en.kbX*dt, en.kbY*dt, en.r);
+      const dec=Math.exp(-7*dt); en.kbX*=dec; en.kbY*=dec;
+      if(Math.hypot(en.kbX,en.kbY)<14){ en.kbX=0; en.kbY=0; }
+    } else {
+      updateEnemyPattern(en,dt,dist);
+    }
+    if(en.isKing){ // periodic minion spawn, capped at 3 alive at once
+      en.spawnT-=dt;
+      if(en.spawnT<=0){
+        en.spawnT=4;
+        if(enemies.filter(e=>e.minion&&e.alive).length+pendingSpawns.length<3){
+          const m=makeEnemy(Math.floor(en.x/TILE),Math.floor(en.y/TILE),"green");
+          m.minion=true; m.aggro=true; m.x=en.x+rand(-26,26); m.y=en.y+rand(-26,26);
+          pendingSpawns.push(m); burst(en.x,en.y,"#4ade80",10); sfx.pop();
+        }
+      }
+    }
+    if(Math.hypot(player.x-en.x,player.y-en.y)<en.r+13 && player.invuln<=0 && player.hp>0){
+      player.hp--; player.invuln=1.0; updateHearts(); sfx.hurt();
+      const kb=Math.atan2(player.y-en.y, player.x-en.x); tryMovePlayer(Math.cos(kb)*26, Math.sin(kb)*26, collidesDungeonAt);
+      burst(player.x,player.y,"#f87171",10); showToast("Ouch! −½ heart");
+      if(player.hp<=0){ document.getElementById("deadText").textContent=`You collected ${rupeesCount} rupees and defeated ${kills} enemies.`; document.getElementById("deadOverlay").classList.remove("hidden"); }
+    }
+  });
+  pendingSpawns.forEach(m=>enemies.push(m));
+
+  // Boss defeated: the Heart Container drops where the King Slime fell.
+  if(dRoom.id==="boss"&&!dState.bossDead&&dRoom.kingRef&&!dRoom.kingRef.alive){
+    dState.bossDead=true; sfx.fanfare();
+    pickups.push({x:dRoom.kingRef.x,y:dRoom.kingRef.y,type:"heartcontainer",value:1,vx:0,vy:0,t:0,life:9999,grabbed:false});
+    floater(dRoom.kingRef.x,dRoom.kingRef.y-30,"👑 King Slime defeated!","#f6c453");
+  }
+
+  projectiles=projectiles.filter(p=>{
+    const step=Math.hypot(p.vx,p.vy)*dt; p.dist+=step;
+    if(p.type==="arrow"){
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+      if(isSolidAt(p.x,p.y)){ burst(p.x,p.y,"#d6d3d1",5); return false; }
+      for(const en of enemies){ if(en.alive && Math.hypot(en.x-p.x,en.y-p.y)<24){ hurtEnemy(en,2,p.ang,{kb:110}); return false; } }
+      return p.dist<480;
+    }
+    p.spin+=dt*18;
+    if(p.stage==="out"){
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+      if(isSolidAt(p.x,p.y)||p.dist>200) p.stage="back";
+    } else {
+      const a=Math.atan2(player.y-p.y,player.x-p.x); p.x+=Math.cos(a)*470*dt; p.y+=Math.sin(a)*470*dt;
+      if(Math.hypot(player.x-p.x,player.y-p.y)<26){ sfx.pop(); return false; }
+    }
+    enemies.forEach(en=>{ if(en.alive && !p.hit.has(en) && Math.hypot(en.x-p.x,en.y-p.y)<28){ p.hit.add(en); hurtEnemy(en,1,Math.atan2(en.y-player.y,en.x-player.x),{stun:TUNING.boomerangStunSec,kb:90}); } });
+    cutGrassAt(p.x,p.y,24);
+    pickups.forEach(pk=>{ if(Math.hypot(pk.x-p.x,pk.y-p.y)<30) pk.grabbed=true; });
+    return true;
+  });
+
+  eProjectiles=eProjectiles.filter(p=>{
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.dist+=Math.hypot(p.vx,p.vy)*dt;
+    if(isSolidAt(p.x,p.y)){ burst(p.x,p.y,"#a8a29e",5); return false; }
+    if(Math.hypot(player.x-p.x,player.y-p.y)<24 && player.hp>0){
+      if(shieldBlocks(p)){
+        burst(p.x,p.y,"#fde68a",10); burst(p.x,p.y,"#e5e7eb",5);
+        floater(player.x,player.y-26,"🛡️ Blocked!","#fde68a"); sfx.clang();
+        return false;
+      }
+      if(player.invuln<=0){
+        player.hp--; player.invuln=1.0; updateHearts(); sfx.hurt();
+        const kb=Math.atan2(player.y-p.y, player.x-p.x); tryMovePlayer(Math.cos(kb)*22, Math.sin(kb)*22, collidesDungeonAt);
+        burst(player.x,player.y,"#f87171",10); showToast("Hit by a rock! Face the shot to block it 🛡️");
+        if(player.hp<=0){ document.getElementById("deadText").textContent=`You collected ${rupeesCount} rupees and defeated ${kills} enemies.`; document.getElementById("deadOverlay").classList.remove("hidden"); }
+      }
+      return false;
+    }
+    return p.dist<560;
+  });
+
+  processBombs(dt);
+
+  pickups=pickups.filter(p=>{
+    p.t+=dt; p.life-=dt;
+    if(p.grabbed){ const a=Math.atan2(player.y-p.y,player.x-p.x); p.x+=Math.cos(a)*330*dt; p.y+=Math.sin(a)*330*dt; }
+    else { p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.88; p.vy*=0.88; if(p.vy<0) p.vy+=160*dt; }
+    const d=Math.hypot(player.x-p.x, player.y-p.y);
+    if(d<58 && p.type==="rupee" && !p.grabbed){ const a=Math.atan2(player.y-p.y, player.x-p.x); p.x+=Math.cos(a)*140*dt; p.y+=Math.sin(a)*140*dt; }
+    if(d<24){
+      if(p.type==="rupee"){ rupeesCount+=p.value; document.getElementById("rupees").textContent=rupeesCount; floater(player.x,player.y-22,"+"+p.value+" 💎","#7dd3fc"); sfx.coin(); }
+      else if(p.type==="arrows"){ arrows+=p.value; updateInv(); floater(player.x,player.y-22,"+"+p.value+" 🏹","#fcd34d"); sfx.coin(); }
+      else if(p.type==="bombs"){ bombCount=Math.min(TUNING.bombMax,bombCount+p.value); updateInv(); floater(player.x,player.y-22,"+"+p.value+" 💣","#fcd34d"); sfx.coin(); }
+      else if(p.type==="key"){ smallKeys++; updateInv(); floater(player.x,player.y-22,"🔑 Small Key!","#f6c453"); sfx.buy(); showToast("🔑 Got a small key — the central hall's north door will open"); }
+      else if(p.type==="heartcontainer"){ player.maxHp+=2; player.hp=player.maxHp; dState.heartTaken=true; updateHearts(); floater(player.x,player.y-26,"💖 Heart Container!","#fda4af"); sfx.fanfare(); showToast("💖 Heart Container — max hearts +1!"); }
+      else if(p.type==="heartOnce"){ dState.flags.secretHeart=true; if(player.hp<player.maxHp){ player.hp=Math.min(player.maxHp,player.hp+2); updateHearts(); floater(player.x,player.y-22,"+❤️","#fda4af"); sfx.coin(); } else { rupeesCount+=5; document.getElementById("rupees").textContent=rupeesCount; floater(player.x,player.y-22,"Full hearts → +5","#7dd3fc"); } }
+      else if(p.type==="heart"){ if(player.hp<player.maxHp){ player.hp=Math.min(player.maxHp,player.hp+2); updateHearts(); floater(player.x,player.y-22,"+❤️","#fda4af"); sfx.coin(); } else { rupeesCount+=5; document.getElementById("rupees").textContent=rupeesCount; floater(player.x,player.y-22,"Full hearts → +5","#7dd3fc"); } }
+      return false;
+    }
+    return p.life>0;
+  });
+  particles=particles.filter(p=>{p.t+=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=220*dt; return p.t<p.life;});
+  floaters=floaters.filter(f=>{f.t+=dt; f.y-=28*dt; return f.t<1.1;});
+}
+
+// ---------- Dungeon drawing ----------
+function drawDungeonRoom(camX,camY,t){
+  const def=dRoom.def;
+  for(let ty=0;ty<RH;ty++) for(let tx=0;tx<RW;tx++){
+    const sx=tx*TILE-camX, sy=ty*TILE-camY; if(sx<-TILE||sy<-TILE||sx>W||sy>H) continue;
+    const chk=(tx+ty)%2===0;
+    ctx.fillStyle=chk?"#262b33":"#22262d"; ctx.fillRect(sx,sy,TILE,TILE);
+    ctx.fillStyle="rgba(255,255,255,.028)"; ctx.fillRect(sx,sy,TILE,2);
+    if((tx*31+ty*17)%13===0){ ctx.strokeStyle="rgba(0,0,0,.35)"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx+8,sy+30); ctx.lineTo(sx+18,sy+22); ctx.lineTo(sx+26,sy+28); ctx.stroke(); }
+    if(dRoom.gapTiles.has(tx+","+ty)){ ctx.fillStyle="#14171c"; ctx.fillRect(sx,sy,TILE,TILE); }
+  }
+  // Wall tiles: the same solid grid the collision uses.
+  for(let ty=0;ty<RH;ty++) for(let tx=0;tx<RW;tx++){
+    if(!dRoom.solid[ty+1][tx+1]) continue;
+    const sx=tx*TILE-camX, sy=ty*TILE-camY; if(sx<-TILE||sy<-TILE||sx>W||sy>H) continue;
+    ctx.fillStyle="#454e59"; ctx.fillRect(sx,sy,TILE,TILE);
+    ctx.fillStyle="#59636f"; ctx.fillRect(sx+2,sy+2,TILE-4,TILE-10);
+    ctx.fillStyle="rgba(255,255,255,.13)"; ctx.fillRect(sx+2,sy+2,TILE-4,3);
+    ctx.fillStyle="rgba(0,0,0,.35)"; ctx.fillRect(sx,sy+TILE-5,TILE,5);
+    ctx.strokeStyle="rgba(0,0,0,.4)"; ctx.lineWidth=1; ctx.strokeRect(sx+.5,sy+.5,TILE-1,TILE-1);
+  }
+  // Cracked (bombable) wall segments: wall stone split by dark fractures.
+  dRoom.crackTiles.forEach(ct=>{
+    const sx=ct.tx*TILE-camX, sy=ct.ty*TILE-camY;
+    ctx.strokeStyle="#14100c"; ctx.lineWidth=2; ctx.beginPath();
+    ctx.moveTo(sx+8,sy+2); ctx.lineTo(sx+16,sy+14); ctx.lineTo(sx+12,sy+26); ctx.lineTo(sx+18,sy+38);
+    ctx.moveTo(sx+30,sy+4); ctx.lineTo(sx+22,sy+16); ctx.lineTo(sx+28,sy+30);
+    ctx.moveTo(sx+4,sy+20); ctx.lineTo(sx+14,sy+24); ctx.stroke();
+    ctx.strokeStyle="rgba(255,220,150,.25)"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx+9,sy+3); ctx.lineTo(sx+16,sy+13); ctx.stroke();
+  });
+  // Puzzle shutter barrier (east room, until the block rests on the switch).
+  dRoom.shutterTiles.forEach(st=>{
+    const sx=st.tx*TILE-camX, sy=st.ty*TILE-camY;
+    ctx.fillStyle="#2b2f36"; ctx.fillRect(sx,sy,TILE,TILE);
+    ctx.fillStyle="#78818d"; for(let i=0;i<4;i++) ctx.fillRect(sx+4+i*9,sy+3,4,TILE-6);
+    ctx.fillStyle="#9aa3ae"; ctx.fillRect(sx,sy+16,TILE,5);
+  });
+  // Doors that are shut: locked slab, shutter bars, or the sealed-room bars.
+  Object.keys(dRoom.doorTiles).forEach(side=>{
+    const info=dRoom.doorTiles[side]; if(info.state==="open") return;
+    info.tiles.forEach(([tx,ty])=>{
+      const sx=tx*TILE-camX, sy=ty*TILE-camY;
+      if(info.state==="locked"&&!dRoom.sealed){
+        ctx.fillStyle="#6b4423"; ctx.fillRect(sx+2,sy+2,TILE-4,TILE-4);
+        ctx.fillStyle="#7d5230"; ctx.fillRect(sx+5,sy+5,TILE-10,TILE-10);
+        ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.arc(sx+20,sy+17,5,0,Math.PI*2); ctx.fill(); ctx.fillRect(sx+18.4,sy+19,3.2,7);
+      } else if(info.state==="exit"){
+        // (the entrance room's exit is never shut)
+      } else if(info.state!=="crack"){
+        ctx.fillStyle="#23262c"; ctx.fillRect(sx,sy,TILE,TILE);
+        ctx.fillStyle="#78818d"; for(let i=0;i<4;i++) ctx.fillRect(sx+4+i*9,sy+3,4,TILE-6);
+        ctx.fillStyle="#9aa3ae"; ctx.fillRect(sx,sy+16,TILE,5);
+      }
+    });
+  });
+  // The entrance room's exit: lamplight spilling from the way out.
+  if(def.doors.s==="exit"){
+    GAP_COLS.forEach(c=>{
+      const sx=c*TILE-camX, sy=(RH-1)*TILE-camY;
+      const g=ctx.createLinearGradient(0,sy,0,sy+TILE);
+      g.addColorStop(0,"rgba(246,196,83,.06)"); g.addColorStop(1,"rgba(246,196,83,.5)");
+      ctx.fillStyle=g; ctx.fillRect(sx,sy,TILE,TILE);
+      ctx.fillStyle="rgba(120,80,20,.55)"; ctx.fillRect(sx+4,sy+TILE-9,TILE-8,3); ctx.fillRect(sx+8,sy+TILE-17,TILE-16,3);
+    });
+  }
+  // Torches on the north wall of every room.
+  [3,14].forEach(tc=>{
+    const sx=tc*TILE+20-camX, sy=30-camY;
+    ctx.fillStyle="#4a3520"; ctx.fillRect(sx-2,sy,4,10);
+    const fl=1+Math.sin(t*11+tc*2.3)*0.18;
+    ctx.fillStyle="#fb923c"; ctx.beginPath(); ctx.ellipse(sx,sy-5*fl,4.6,7*fl,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fde68a"; ctx.beginPath(); ctx.ellipse(sx,sy-3*fl,2.2,3.6*fl,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(251,146,60,.10)"; ctx.beginPath(); ctx.arc(sx,sy-4,26,0,Math.PI*2); ctx.fill();
+  });
+  // Floor switch (east room puzzle).
+  if(def.puzzle){
+    const sx=13*TILE-camX, sy=6*TILE-camY;
+    ctx.fillStyle="#3a3f47"; ctx.beginPath(); ctx.roundRect(sx+5,sy+5,TILE-10,TILE-10,6); ctx.fill();
+    ctx.fillStyle=dState.puzzleDone?"#4ade80":"#b91c1c"; ctx.beginPath(); ctx.arc(sx+20,sy+20,8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(sx+17,sy+17,3,0,Math.PI*2); ctx.fill();
+  }
+  // Chest.
+  if(def.chest){
+    const ch=def.chest, sx=ch.tx*TILE-camX, sy=ch.ty*TILE-camY, opened=!!dState.chests[ch.id];
+    ctx.fillStyle="rgba(0,0,0,.3)"; ctx.fillRect(sx+3,sy+30,34,6);
+    if(opened){
+      ctx.fillStyle="#5b3a1a"; ctx.fillRect(sx+5,sy+16,30,16);
+      ctx.fillStyle="#241505"; ctx.fillRect(sx+7,sy+18,26,8);
+      ctx.fillStyle="#7c4a21"; ctx.fillRect(sx+5,sy+6,30,9);
+      ctx.fillStyle="#f6c453"; ctx.fillRect(sx+17,sy+12,6,6);
+    } else {
+      ctx.fillStyle="#7c4a21"; ctx.fillRect(sx+5,sy+13,30,19);
+      ctx.fillStyle="#96602c"; ctx.beginPath(); ctx.ellipse(sx+20,sy+14,15,7,0,Math.PI,0); ctx.fill(); ctx.fillRect(sx+5,sy+13,30,3);
+      ctx.fillStyle="#f6c453"; ctx.fillRect(sx+5,sy+20,30,3.4); ctx.fillRect(sx+17.4,sy+13,5.2,12);
+      ctx.beginPath(); ctx.arc(sx+20,sy+22,2.6,0,Math.PI*2); ctx.fill();
+      if(Math.floor(t*1.4+ch.tx)%3===0) drawSparkle(sx+29,sy+9,5,0.8);
+    }
+  }
+  // Pushable block.
+  if(dBlock){
+    const sx=dBlock.x-camX, sy=dBlock.y-camY;
+    ctx.fillStyle="rgba(0,0,0,.3)"; ctx.fillRect(sx+3,sy+32,34,6);
+    ctx.fillStyle="#5d6672"; ctx.fillRect(sx+2,sy+2,TILE-4,TILE-4);
+    ctx.fillStyle="#78828f"; ctx.fillRect(sx+6,sy+6,TILE-12,TILE-14);
+    ctx.fillStyle="rgba(255,255,255,.16)"; ctx.fillRect(sx+6,sy+6,TILE-12,4);
+    ctx.strokeStyle="rgba(0,0,0,.45)"; ctx.lineWidth=1.4; ctx.strokeRect(sx+2.5,sy+2.5,TILE-5,TILE-5);
+    ctx.strokeStyle="rgba(0,0,0,.3)"; ctx.beginPath(); ctx.moveTo(sx+10,sy+26); ctx.lineTo(sx+20,sy+18); ctx.lineTo(sx+29,sy+24); ctx.stroke();
+  }
+  // Exit warp (boss room, after the boss falls).
+  if(dRoom.id==="boss"&&dState.bossDead){
+    const sx=WARP_POS.x-camX, sy=WARP_POS.y-camY;
+    ctx.save(); ctx.translate(sx,sy);
+    ctx.fillStyle="rgba(125,211,252,.16)"; ctx.beginPath(); ctx.arc(0,0,30+Math.sin(t*3)*3,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#7dd3fc"; ctx.lineWidth=3;
+    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(0,0,10+i*7, t*(1.4+i*0.4)+i*2.1, t*(1.4+i*0.4)+i*2.1+4.2); ctx.stroke(); }
+    ctx.fillStyle="#e0f2fe"; ctx.beginPath(); ctx.arc(0,0,4.4,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    ctx.font="700 11px system-ui"; ctx.textAlign="center"; ctx.fillStyle="#bae6fd"; ctx.fillText("✦ warp out ✦",sx,sy+44);
+  }
+}
+function drawDungeon(){
+  const camX=ROOM_W<=W?(ROOM_W-W)/2:Math.max(0,Math.min(ROOM_W-W,player.x-W/2));
+  const camY=ROOM_H<=H?(ROOM_H-H)/2:Math.max(0,Math.min(ROOM_H-H,player.y-H/2));
+  ctx.fillStyle="#04060a"; ctx.fillRect(0,0,W,H);
+  const t=performance.now()/1000;
+  drawDungeonRoom(camX,camY,t);
+  pickups.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(sx<-30||sy<-30||sx>W+30||sy>H+30) return; if(p.life<3 && p.life>0 && Math.floor(t*8)%2===0) return;
+    if(p.type==="rupee") drawRupee(sx,sy,p.value,t);
+    else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); }
+    else if(p.type==="bombs"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+6+Math.sin(t*4+p.x)*2); }
+    else if(p.type==="key"){ ctx.font="19px serif"; ctx.textAlign="center"; ctx.fillText("🔑",sx,sy+7+Math.sin(t*4+p.x)*2); drawSparkle(sx+8,sy-8,4.5,0.6+0.4*Math.sin(t*3)); }
+    else if(p.type==="heartcontainer"){ const pl=1+Math.sin(t*3.2)*0.12; ctx.save(); ctx.translate(sx,sy); ctx.scale(pl,pl); ctx.font="30px serif"; ctx.textAlign="center"; ctx.fillText("💖",0,11); ctx.restore(); drawSparkle(sx-12,sy-12,5,0.5+0.5*Math.sin(t*2.4)); }
+    else { ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("❤️",sx,sy+7+Math.sin(t*4+p.x)*2); }
+  });
+  enemies.forEach(en=>drawEnemy(en,camX,camY));
+  drawPlayer(camX,camY,t);
+  if(TUNING.showCollisionBoxes){
+    ctx.lineWidth=1.5; ctx.strokeStyle="#f0f";
+    for(let ty=0;ty<RH;ty++) for(let tx=0;tx<RW;tx++) if(dRoom.solid[ty+1][tx+1]) ctx.strokeRect(tx*TILE-camX,ty*TILE-camY,TILE,TILE);
+    if(dBlock){ ctx.strokeStyle="#fb923c"; ctx.strokeRect(dBlock.x-camX,dBlock.y-camY,TILE,TILE); }
+    const pf=playerFootRect(player.x,player.y);
+    ctx.strokeStyle="#0ff"; ctx.strokeRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
+    ctx.fillStyle="rgba(0,255,255,.18)"; ctx.fillRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
+  }
+  projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
+  eProjectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+5,6,2.5,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#78716c"; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#a8a29e"; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#57534e"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke(); });
+  drawBombsFx(camX,camY,t);
+  particles.forEach(p=>{ ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x-camX,p.y-camY,p.size,p.size); }); ctx.globalAlpha=1;
+  floaters.forEach(f=>{ ctx.globalAlpha=1-f.t/1.1; ctx.font="800 13px system-ui"; ctx.textAlign="center"; ctx.fillStyle=f.color; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.lineWidth=3; ctx.strokeText(f.text,f.x-camX,f.y-camY); ctx.fillText(f.text,f.x-camX,f.y-camY); }); ctx.globalAlpha=1;
+  if(fadeT>0){ ctx.fillStyle=`rgba(0,0,0,${Math.min(0.92,fadeT/0.3*0.92)})`; ctx.fillRect(0,0,W,H); }
+  // Dungeon minimap: the room grid, visited rooms lit, current room ringed.
+  const MW=264, MH=184, cw=34, chh=26, ox=58, oy=12;
+  mctx.clearRect(0,0,MW,MH);
+  mctx.fillStyle="#0a0e13"; mctx.fillRect(0,0,MW,MH);
+  mctx.fillStyle="#8b95a1"; mctx.font="700 10px system-ui"; mctx.textAlign="center"; mctx.fillText("LAKEBED CAVERN",MW/2,oy+8);
+  Object.keys(DG_ROOMS).forEach(id=>{
+    const r=DG_ROOMS[id], x=ox+r.gx*cw, y=oy+16+r.gy*chh;
+    if(!dState.visited[id]){ mctx.strokeStyle="rgba(255,255,255,.14)"; mctx.lineWidth=1; mctx.strokeRect(x+3.5,y+3.5,cw-7,chh-7); return; }
+    mctx.fillStyle=id==="boss"?"#5b2333":"#3d4753"; mctx.fillRect(x+3,y+3,cw-6,chh-6);
+    if(id===dRoom.id){ mctx.strokeStyle="#f6c453"; mctx.lineWidth=2; mctx.strokeRect(x+2.5,y+2.5,cw-5,chh-5); }
+    if(id==="boss") mctx.fillText("👑",x+cw/2,y+chh/2+4);
+  });
+  const cr=DG_ROOMS[dRoom.id];
+  mctx.fillStyle="#fff"; mctx.beginPath(); mctx.arc(ox+cr.gx*cw+cw/2,oy+16+cr.gy*chh+chh/2,3.4,0,Math.PI*2); mctx.fill();
+}
 
 // ---------- Enemy movement patterns (stateful, no steady homing) ----------
 function updateEnemyPattern(en,dt,dist){
@@ -1130,6 +1727,16 @@ function updateEnemyPattern(en,dt,dist){
     } else { // knocked into pause/recover etc. — resume the cycle
       if(en.stateT<=0){ en.state="pause"; en.stateT=0.3; }
     }
+  } else if(en.type==="king"){ // King Slime: slow, heavy hops straight at the player
+    if(en.state==="hop"){
+      tryMove(en, en.pDirX*185*sm*dt, en.pDirY*185*sm*dt, en.r);
+      if(en.stateT<=0){ en.state="pause"; en.stateT=rand(.5,.85); }
+    } else {
+      if(en.stateT<=0){
+        const a = en.aggro ? Math.atan2(player.y-en.y,player.x-en.x)+rand(-.25,.25) : rand(0,Math.PI*2);
+        en.pDirX=Math.cos(a); en.pDirY=Math.sin(a); en.state="hop"; en.stateT=0.34;
+      }
+    }
   } else { // Lake Hylia blue: quick darts between short pauses
     if(en.state==="dart"){
       tryMove(en, en.pDirX*275*sm*dt, en.pDirY*275*sm*dt, en.r);
@@ -1158,6 +1765,12 @@ function update(dt){
   if(inTall && len>0.1){ player.rustleT-=dt; if(player.rustleT<=0){ player.rustleT=0.16; burst(player.x+rand(-8,8),player.y+10,"#4ade80",2); sfx.rustle(); } }
   const zt=tileOf(player.x,player.y), z=zoneAt(zt.tx,zt.ty);
   if(z.key!==currentZoneKey){ currentZoneKey=z.key; showZone(z); }
+  // Cave entrance on Lake Hylia's north shore: walking into the mouth enters
+  // the Lakebed Cavern. The latch stops an instant re-entry on the way out —
+  // it clears once the player has walked away from the mouth.
+  const caveCx=CAVE.tx*TILE+20, caveCy=CAVE.ty*TILE+20, caveDist=Math.hypot(player.x-caveCx,player.y-caveCy);
+  if(caveDist>64) caveLatch=false;
+  if(!caveLatch && caveDist<17 && player.hp>0) enterDungeon();
   document.getElementById("shopPrompt").classList.toggle("hidden",!nearShop());
 
   grass.forEach(g=>{ if(!g.alive){ g.timer-=dt; if(g.timer<=0){g.alive=true; burst(g.x,g.y,"#86efac",4);} } });
@@ -1238,6 +1851,7 @@ function update(dt){
     return p.dist<560;
   });
 
+  processBombs(dt);
   pickups=pickups.filter(p=>{
     p.t+=dt; p.life-=dt;
     if(p.grabbed){ const a=Math.atan2(player.y-p.y,player.x-p.x); p.x+=Math.cos(a)*330*dt; p.y+=Math.sin(a)*330*dt; }
@@ -1247,6 +1861,7 @@ function update(dt){
     if(d<24){
       if(p.type==="rupee"){ rupeesCount+=p.value; document.getElementById("rupees").textContent=rupeesCount; floater(player.x,player.y-22,"+"+p.value+" 💎","#7dd3fc"); sfx.coin(); }
       else if(p.type==="arrows"){ arrows+=p.value; updateInv(); floater(player.x,player.y-22,"+"+p.value+" 🏹","#fcd34d"); sfx.coin(); }
+      else if(p.type==="bombs"){ bombCount=Math.min(TUNING.bombMax,bombCount+p.value); updateInv(); floater(player.x,player.y-22,"+"+p.value+" 💣","#fcd34d"); sfx.coin(); }
       else if(p.type==="heart"){ if(player.hp<player.maxHp){player.hp=Math.min(player.maxHp,player.hp+2); updateHearts(); floater(player.x,player.y-22,"+❤️","#fda4af"); sfx.coin();} else { rupeesCount+=5; document.getElementById("rupees").textContent=rupeesCount; floater(player.x,player.y-22,"Full hearts → +5","#7dd3fc"); } }
       return false;
     }
@@ -1272,6 +1887,10 @@ function strokeSolidRect(r,ox,oy){
   ctx.closePath();
   ctx.stroke();
 }
+function drawSparkle(x,y,r,a){
+  ctx.save(); ctx.globalAlpha=Math.max(0,Math.min(1,a)); ctx.strokeStyle="#fff7cc"; ctx.lineWidth=1.6; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(x-r,y); ctx.lineTo(x+r,y); ctx.moveTo(x,y-r); ctx.lineTo(x,y+r); ctx.stroke(); ctx.restore();
+}
 function drawWorld(camX,camY,t){
   for(let ty=0;ty<ROWS;ty++) for(let tx=0;tx<COLS;tx++){
     const sx=tx*TILE-camX, sy=ty*TILE-camY; if(sx<-TILE||sy<-TILE||sx>W||sy>H) continue;
@@ -1289,6 +1908,38 @@ function drawWorld(camX,camY,t){
     if(v===2){ const rd=OBSTACLE_GEOMETRY[2].draw; ctx.fillStyle="#9aa0a3"; ctx.beginPath(); ctx.ellipse(sx+rd.cx,sy+rd.cy,rd.rx,rd.ry,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#c2c7c9"; ctx.beginPath(); ctx.ellipse(sx+15,sy+19,9,6,0,0,Math.PI*2); ctx.fill(); }
     if(v===4){ ctx.fillStyle="#8b5e2e"; ctx.fillRect(sx+3,sy+14,34,6); ctx.fillRect(sx+6,sy+8,5,24); ctx.fillRect(sx+29,sy+8,5,24); }
     if(v===7){ const cd=OBSTACLE_GEOMETRY[7].draw; ctx.fillStyle="#2e8b57"; ctx.fillRect(sx+cd.x,sy+cd.y,cd.w,cd.h); ctx.fillRect(sx+8,sy+16,8,5); ctx.fillRect(sx+8,sy+12,5,9); ctx.fillRect(sx+24,sy+14,8,5); ctx.fillRect(sx+27,sy+10,5,9); ctx.fillStyle="#f472b6"; ctx.beginPath(); ctx.arc(sx+20,sy+7,4,0,Math.PI*2); ctx.fill(); }
+  }
+  // Cave entrance on Lake Hylia's north shore: a rocky mound with a dark
+  // mouth. Walking into the mouth enters the Lakebed Cavern (see update()).
+  { const sx=CAVE.tx*TILE-camX, sy=CAVE.ty*TILE-camY;
+    if(sx>-TILE&&sy>-TILE&&sx<W+TILE&&sy<H+TILE){
+      ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(sx+20,sy+37,22,5,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#83898f"; ctx.beginPath(); ctx.ellipse(sx+20,sy+27,22,17,0,Math.PI,0); ctx.fill(); ctx.fillRect(sx-2,sy+26,44,12);
+      ctx.fillStyle="#9aa0a3"; ctx.beginPath(); ctx.ellipse(sx+12,sy+16,9,6,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#565d63"; ctx.beginPath(); ctx.ellipse(sx+29,sy+20,7,5,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#04070a"; ctx.beginPath(); ctx.ellipse(sx+20,sy+31,10.5,12,0,Math.PI,0); ctx.fill(); ctx.fillRect(sx+9.5,sy+30,21,9);
+      ctx.fillStyle="rgba(246,196,83,.16)"; ctx.fillRect(sx+16,sy+35,8,3);
+    }
+  }
+  // The sword in the lake: a blade-up sword resting in a stone pedestal on a
+  // deep-water tile (every tile around it is deep water too, so it can be
+  // seen but never reached or claimed in this pass). A glint runs up the
+  // blade every few seconds so it reads as a goal, not decoration.
+  { const sx=SWORD_TILE.tx*TILE-camX, sy=SWORD_TILE.ty*TILE-camY;
+    if(sx>-TILE&&sy>-TILE&&sx<W+TILE&&sy<H+TILE){
+      const cxp=sx+20, cyp=sy+24;
+      ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.lineWidth=1.6; ctx.beginPath(); ctx.ellipse(cxp,cyp+9,16+Math.sin(t*1.7)*1.5,5,0,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle="#787f87"; ctx.beginPath(); ctx.ellipse(cxp,cyp+5,13,8,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#9aa0a3"; ctx.beginPath(); ctx.ellipse(cxp-2,cyp+2,8,5,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#5d646b"; ctx.beginPath(); ctx.ellipse(cxp+4,cyp+7,6,3.4,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#78350f"; ctx.fillRect(cxp-2,cyp-7,4,7);
+      ctx.fillStyle="#92400e"; ctx.beginPath(); ctx.arc(cxp,cyp+1,2.6,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#f6c453"; ctx.fillRect(cxp-8.5,cyp-10.5,17,3.6);
+      ctx.fillStyle="#e5e7eb"; ctx.beginPath(); ctx.moveTo(cxp-3.4,cyp-10); ctx.lineTo(cxp-3.4,cyp-29); ctx.lineTo(cxp,cyp-36); ctx.lineTo(cxp+3.4,cyp-29); ctx.lineTo(cxp+3.4,cyp-10); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.85)"; ctx.fillRect(cxp-1,cyp-27,1.7,14);
+      const gp=t%3.4; if(gp<0.7){ const a=Math.sin(gp/0.7*Math.PI); drawSparkle(cxp,cyp-31,8*a,a); }
+      const gp2=(t+1.7)%3.4; if(gp2<0.7){ const a=Math.sin(gp2/0.7*Math.PI)*0.8; drawSparkle(cxp-6,cyp-12,5.5*a,a); }
+    }
   }
   decor.forEach(d=>{ const sx=d.x-camX, sy=d.y-camY; if(sx<-10||sy<-10||sx>W+10||sy>H+10) return; if(d.kind==="pebble"){ ctx.fillStyle="#b8a888"; ctx.fillRect(sx,sy,5,3); } else if(d.kind==="shell"){ ctx.fillStyle="#fff1f2"; ctx.beginPath(); ctx.arc(sx,sy,3,Math.PI,0); ctx.fill(); } else { ctx.fillStyle=d.c; ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fef08a"; ctx.fillRect(sx-1,sy-1,2,2); } });
 }
@@ -1333,7 +1984,7 @@ function drawRupee(x,y,value,t){
   const bob=Math.sin(t*4+x)*2; const col=value>=20?"#ef4444":value>=5?"#38bdf8":"#22e07a"; const dark=value>=20?"#991b1b":value>=5?"#075985":"#166534";
   ctx.save(); ctx.translate(x,y+bob); ctx.fillStyle=dark; ctx.beginPath(); ctx.moveTo(0,-11); ctx.lineTo(7,-4); ctx.lineTo(7,7); ctx.lineTo(0,13); ctx.lineTo(-7,7); ctx.lineTo(-7,-4); ctx.closePath(); ctx.fill(); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(5,-3); ctx.lineTo(5,6); ctx.lineTo(0,10); ctx.lineTo(-5,6); ctx.lineTo(-5,-3); ctx.closePath(); ctx.fill(); ctx.fillStyle="rgba(255,255,255,.75)"; ctx.fillRect(-2,-5,3,6); ctx.restore();
 }
-const ENEMY_COLORS={green:["#65d93a","#3a9d1f"],red:["#ef4444","#b91c1c"],blue:["#38bdf8","#0369a1"],purple:["#a855f7","#6d28d9"],shooter:["#fb923c","#c2410c"]};
+const ENEMY_COLORS={green:["#65d93a","#3a9d1f"],red:["#ef4444","#b91c1c"],blue:["#38bdf8","#0369a1"],purple:["#a855f7","#6d28d9"],shooter:["#fb923c","#c2410c"],king:["#4ade80","#15803d"]};
 function drawEnemy(en,camX,camY){
   if(!en.alive) return; let sx=en.x-camX, sy=en.y-camY; if(sx<-180||sy<-180||sx>W+180||sy>H+180) return; const squash=1+Math.sin(en.wob)*0.06;
   if(en.state==="telegraph"){ sx+=rand(-2.5,2.5); sy+=rand(-1.5,1.5); } // charger telegraph: shake
@@ -1341,6 +1992,23 @@ function drawEnemy(en,camX,camY){
   if(en.aggro){ ctx.strokeStyle="rgba(255,70,70,.5)"; ctx.setLineDash([6,6]); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(sx,sy,effAggro,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
   else if(TUNING.showAggroRings){ ctx.strokeStyle="rgba(255,255,255,.25)"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,effAggro,0,Math.PI*2); ctx.stroke(); }
   const cols=ENEMY_COLORS[en.type];
+  if(en.type==="king"){ // King Slime: a much larger crowned slime
+    ctx.save(); ctx.translate(sx,sy); ctx.scale(1,squash);
+    ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(0,26,31,8,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=en.flash>0?"#ff2e63":cols[0]; ctx.beginPath(); ctx.ellipse(0,4,34,27,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=cols[1]; ctx.beginPath(); ctx.ellipse(0,13,34,18,0,0,Math.PI); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(-11,-3,6,0,Math.PI*2); ctx.arc(11,-3,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#111"; ctx.beginPath(); ctx.arc(-11,-2,3,0,Math.PI*2); ctx.arc(11,-2,3,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#111"; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(-17,-11); ctx.lineTo(-5,-8); ctx.moveTo(17,-11); ctx.lineTo(5,-8); ctx.stroke();
+    if(en.aggro){ ctx.fillStyle="#111"; ctx.fillRect(-10,10,20,3); }
+    ctx.font="27px serif"; ctx.textAlign="center"; ctx.fillText("👑",0,-22);
+    ctx.restore();
+    if(tallAt(en.x,en.y+8)) drawWading(sx,sy,performance.now()/1000+en.wob);
+    if(en.stunT>0){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💫",sx,sy-52); }
+    else if(en.hp<en.maxHp){ ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(sx-31,sy-52,62,6); ctx.fillStyle="#ff4757"; ctx.fillRect(sx-30,sy-51,60*(en.hp/en.maxHp),4); }
+    if(en.aggro&&en.stunT<=0){ ctx.fillStyle="#ffdf6b"; ctx.font="900 20px system-ui"; ctx.textAlign="center"; ctx.fillText("!",sx,sy-56); }
+    return;
+  }
   if(en.type==="shooter"){ // rock-spitter: round orange body, little feet, and a snout that tracks its facing
     if(en.state==="fire"){ sx+=rand(-1.5,1.5); sy+=rand(-1,1); }
     ctx.save(); ctx.translate(sx,sy);
@@ -1443,7 +2111,7 @@ function draw(){
   buildings.forEach(b=>drawBuilding(b,camX,camY));
   drawGrassTufts(camX,camY,t);
   drawTallBack(camX,camY,t);
-  pickups.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(sx<-30||sy<-30||sx>W+30||sy>H+30) return; if(p.life<3 && Math.floor(t*8)%2===0) return; if(p.type==="rupee") drawRupee(sx,sy,p.value,t); else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); } else { ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("❤️",sx,sy+7+Math.sin(t*4+p.x)*2); } });
+  pickups.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(sx<-30||sy<-30||sx>W+30||sy>H+30) return; if(p.life<3 && Math.floor(t*8)%2===0) return; if(p.type==="rupee") drawRupee(sx,sy,p.value,t); else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); } else if(p.type==="bombs"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+6+Math.sin(t*4+p.x)*2); } else { ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("❤️",sx,sy+7+Math.sin(t*4+p.x)*2); } });
   npcs.forEach(n=>drawNPC(n,camX,camY));
   enemies.forEach(en=>drawEnemy(en,camX,camY));
   drawPlayer(camX,camY,t);
@@ -1471,6 +2139,7 @@ function draw(){
   }
   drawTallFront(camX,camY,t);
   projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
+  drawBombsFx(camX,camY,t);
   eProjectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+5,6,2.5,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#78716c"; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#a8a29e"; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#57534e"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke(); });
   particles.forEach(p=>{ ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x-camX,p.y-camY,p.size,p.size); }); ctx.globalAlpha=1;
   floaters.forEach(f=>{ ctx.globalAlpha=1-f.t/1.1; ctx.font="800 13px system-ui"; ctx.textAlign="center"; ctx.fillStyle=f.color; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.lineWidth=3; ctx.strokeText(f.text,f.x-camX,f.y-camY); ctx.fillText(f.text,f.x-camX,f.y-camY); }); ctx.globalAlpha=1;
@@ -1490,7 +2159,8 @@ function draw(){
 }
 function loop(ts){
   const dt=Math.min(0.033,(ts-lastTime)/1000||0.016); lastTime=ts;
-  update(dt); draw(); requestAnimationFrame(loop);
+  if(inDungeon){ updateDungeon(dt); drawDungeon(); } else { update(dt); draw(); }
+  requestAnimationFrame(loop);
 }
 resize(); requestAnimationFrame(loop);
 setTimeout(resize,50); setTimeout(resize,300);
@@ -1502,6 +2172,6 @@ let tapT=0; canvas.addEventListener("pointerdown",e=>{ tapT=Date.now(); });
 // movement direction only (the joystick / keys), and is kept when you stop moving.
 canvas.addEventListener("pointerup",e=>{ if(Date.now()-tapT<180 && started && !shopOpen){ doAttack(); }});
 </script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
 </body>
 </html>
