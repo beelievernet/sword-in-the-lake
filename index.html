@@ -17,12 +17,12 @@
   html,body{margin:0;height:100%;background:#08160d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
   button{font:inherit}
   #app{height:100dvh;display:flex;flex-direction:column;max-width:980px;margin:0 auto;background:radial-gradient(900px 500px at 50% -10%,#2a5a35 0%,#0f2417 55%)}
-  .hud{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 12px calc(6px + env(safe-area-inset-top)) 12px;background:rgba(0,0,0,.28);border-bottom:2px solid rgba(246,196,83,.35);z-index:5}
+  .hud{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px calc(6px + env(safe-area-inset-top)) 12px;background:rgba(0,0,0,.28);border-bottom:2px solid rgba(246,196,83,.35);z-index:5}
   .hud .title{font-weight:900;letter-spacing:.04em;line-height:1}
   .hud .title small{display:block;font-weight:600;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
-  .hearts{font-size:22px;letter-spacing:2px;line-height:1;filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
+  .hearts{flex:0 0 auto;white-space:nowrap;font-size:22px;letter-spacing:2px;line-height:1;filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
   .hearts .dim{opacity:.22;filter:grayscale(1)}
-  .pill{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .pill{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;row-gap:6px;min-width:0}
   .stat{background:#0a1a0f;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 11px;font-weight:800;font-size:14px;display:flex;gap:6px;align-items:center;white-space:nowrap}
   .stat b{color:var(--gold)}
   .icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:#1e3d27;color:#fff;font-size:18px;display:grid;place-items:center;cursor:pointer}
@@ -70,12 +70,14 @@
   .desktop-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:7px 12px;border-radius:999px;font-size:12.5px;color:#e6efdf;z-index:5;white-space:nowrap}
   @media (pointer:coarse){.desktop-hint{display:none}}
   @media (pointer:fine){#controls{opacity:.92}#joy{width:110px;height:110px}#stick{left:26px;top:26px}}
-  @media (max-width:560px){.hud{gap:6px;padding:8px 8px 6px}.hud .title{font-size:13px;max-width:86px}.hud .title small{display:none}.hearts{font-size:16px;letter-spacing:0;white-space:nowrap}.stat{padding:6px 8px;font-size:12.5px}.stat .lbl{display:none}#invStat{display:none}.icon-btn{width:34px;height:34px;font-size:15px}.how{grid-template-columns:1fr}.card{padding:16px 14px}.card p{font-size:14.5px}.how div{padding:8px 10px}#shopPrompt{bottom:172px}}
+  @media (max-width:560px){.hud{gap:6px;padding:8px 8px 6px}.hud .title{font-size:13px;max-width:86px}.hud .title small{display:none}.hearts{font-size:16px;letter-spacing:0;white-space:nowrap}.stat{padding:6px 8px;font-size:12.5px}.stat .lbl{display:none}#invStat{display:none}#killsStat{display:none}.icon-btn{width:34px;height:34px;font-size:15px}.how{grid-template-columns:1fr}.card{padding:16px 14px}.card p{font-size:14.5px}.how div{padding:8px 10px}#shopPrompt{bottom:172px}}
   #minimap{position:absolute;right:10px;top:10px;width:132px;height:92px;border-radius:10px;border:2px solid rgba(255,255,255,.35);background:#0f2d16;z-index:4;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-  #arrowStat.empty{border-color:#ff4757;color:#ff6b81;background:#2a0d12}
-  #arrowStat.empty b{color:#ff4757}
-  #bombStat.empty{border-color:#ff4757;color:#ff6b81;background:#2a0d12}
-  #bombStat.empty b{color:#ff4757}
+  /* Consumable counts are baked into the ITEM button as a badge (see
+     #itemCount below): arrows when the bow is equipped, bombs when bombs
+     are equipped — red at zero, like the old counter pills. */
+  #itemBtn{position:relative}
+  .item-count{position:absolute;right:-5px;bottom:-5px;min-width:23px;height:23px;padding:0 6px;border-radius:999px;background:var(--gold);color:#1a1400;border:2px solid #0a1a0f;font-size:13px;font-weight:900;line-height:1;display:grid;place-items:center;box-shadow:0 2px 7px rgba(0,0,0,.45);pointer-events:none}
+  .item-count.zero{background:#ff4757;color:#fff;border-color:#5c0f18}
   /* Floating joystick */
   #joyZone{position:absolute;left:0;top:0;bottom:0;width:58%;z-index:5;touch-action:none}
   #floatJoy{position:absolute;width:124px;height:124px;border-radius:50%;background:rgba(0,0,0,.30);border:2px solid rgba(255,255,255,.30);pointer-events:none;opacity:0;transition:opacity .28s ease;transform:translate(-50%,-50%);backdrop-filter:blur(2px)}
@@ -116,11 +118,9 @@
     <div class="hearts" id="hearts" aria-label="Health"></div>
     <div class="pill">
       <div class="stat"><span>💎</span> <b id="rupees">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">rupees</span></div>
-      <div class="stat hidden" id="arrowStat" aria-label="Arrows"><span>🏹</span> <b id="arrowCount">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">arrows</span></div>
-      <div class="stat hidden" id="bombStat" aria-label="Bombs"><span>💣</span> <b id="bombCount">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">bombs</span></div>
       <div class="stat hidden" id="keyStat" aria-label="Small keys"><span>🔑</span> <b id="keyCount">0</b> <span class="lbl" style="color:var(--muted);font-weight:600">keys</span></div>
       <div class="stat" id="invStat">🎒 <b id="inv">—</b></div>
-      <div class="stat">⚔️ <b id="kills">0</b></div>
+      <div class="stat" id="killsStat">⚔️ <b id="kills">0</b></div>
       <button class="icon-btn" id="tuningBtn" aria-label="Tuning settings">⚙️</button>
       <button class="icon-btn" id="soundBtn" aria-label="Toggle sound">🔊</button>
       <button class="icon-btn" id="installBtn" aria-label="Install app">⬇️</button>
@@ -212,7 +212,7 @@
       <div class="actions">
         <div class="toprow">
           <button id="bagBtn" aria-label="Open bag">🎒</button>
-          <button id="itemBtn" class="none" aria-label="Use equipped item">—</button>
+          <button id="itemBtn" class="none" aria-label="Use equipped item"><span id="itemIcon">—</span><span id="itemCount" class="item-count hidden">0</span></button>
         </div>
         <button id="attackBtn" aria-label="Attack with sword">🗡️</button>
         <label>Sword</label>
@@ -253,7 +253,7 @@ document.getElementById("soundBtn").onclick=function(){ soundOn=!soundOn; this.t
 
 
 // ---------- Tuning (debug menu state — the whole game reads from TUNING) ----------
-const TUNING_DEFAULTS={hitPauseMs:75,knockbackForce:300,enemySpeedMul:1,aggroRangeMul:1,playerSpeed:175,swordCooldownSec:0.32,tallGrassFactor:0.76,enemyRespawnSec:6,grassRegrowSec:9,boomerangStunSec:2.5,bombFuseSec:1.2,bombRadiusTiles:1.5,bombStartCount:10,bombMax:30,showAggroRings:false,showCollisionBoxes:false};
+const TUNING_DEFAULTS={hitPauseMs:75,knockbackForce:300,enemySpeedMul:1,aggroRangeMul:1,playerSpeed:175,swordCooldownSec:0.32,swordReach:64,tallGrassFactor:0.76,enemyRespawnSec:6,grassRegrowSec:9,boomerangStunSec:2.5,bombFuseSec:1.2,bombRadiusTiles:1.5,bombStartCount:10,bombMax:30,showAggroRings:false,showCollisionBoxes:false};
 const TUNING=Object.assign({},TUNING_DEFAULTS);
 try{ const saved=JSON.parse(localStorage.getItem("littleLegendTuning")||"null"); if(saved) Object.keys(TUNING_DEFAULTS).forEach(k=>{ if(typeof saved[k]===(typeof TUNING_DEFAULTS[k])) TUNING[k]=saved[k]; }); }catch(e){}
 function saveTuning(){ try{ localStorage.setItem("littleLegendTuning", JSON.stringify(tuningExportObject())); }catch(e){} }
@@ -264,6 +264,7 @@ const TUNE_DEFS=[
   {key:"aggroRangeMul",label:"Aggro range multiplier",min:0.3,max:2.5,step:0.05,unit:"×"},
   {key:"playerSpeed",label:"Player speed",min:80,max:320,step:5,unit:""},
   {key:"swordCooldownSec",label:"Sword swing cooldown",min:0.1,max:0.8,step:0.02,unit:" s"},
+  {key:"swordReach",label:"Sword reach (hit distance)",min:44,max:92,step:1,unit:""},
   {key:"tallGrassFactor",label:"Tall-grass slowdown factor",min:0.3,max:1,step:0.02,unit:"×"},
   {key:"enemyRespawnSec",label:"Enemy respawn time",min:1,max:20,step:0.5,unit:" s"},
   {key:"grassRegrowSec",label:"Grass regrow time",min:1,max:30,step:0.5,unit:" s"},
@@ -868,8 +869,10 @@ function hurtEnemy(en,dmg,ang,opts){
   const kb=((opts.kb!==undefined)?opts.kb:120)*(en.kbMul||1);
   if(kb>0){ // decaying knockback slide; interrupts whatever pattern state the enemy was in
     en.kbX=Math.cos(ang)*kb; en.kbY=Math.sin(ang)*kb;
-    en.state = en.type==="red" ? "recover" : (en.type==="purple" ? "freeze" : "pause");
-    en.stateT = Math.max(en.stateT, en.type==="red" ? 0.6 : 0.35);
+    if(!en.isKing){ // the King Slime keeps its hop/rest clock running through hits — that rhythm is the fight
+      en.state = en.type==="red" ? "recover" : (en.type==="purple" ? "freeze" : "pause");
+      en.stateT = Math.max(en.stateT, en.type==="red" ? 0.6 : 0.35);
+    }
   }
   burst(en.x,en.y,"#fda4af",8); sfx.hit();
   if(en.hp<=0){
@@ -915,7 +918,7 @@ function doAttack(){
   enemies.forEach(en=>{
     if(!en.alive || en.immuneT>0) return;
     const dx=en.x-player.x, dy=en.y-player.y, dist=Math.hypot(dx,dy);
-    if(dist>64) return;
+    if(dist>TUNING.swordReach) return;
     // Free-angle arc: hit anything within reach inside a ~130° cone around the aim,
     // plus anything point-blank (so a swing while brushing past an enemy still connects)
     const inArc = Math.abs(angleDiff(Math.atan2(dy,dx), ang)) < 1.14;
@@ -989,22 +992,24 @@ function updateHearts(){
 function updateInv(){
   const parts=[]; if(hasBoomerang) parts.push("🪃"); if(hasBow) parts.push("🏹×"+arrows); if(hasBombs) parts.push("💣×"+bombCount);
   document.getElementById("inv").textContent=parts.length?parts.join(" "):"—";
-  const as=document.getElementById("arrowStat");
-  as.classList.toggle("hidden",!hasBow);
-  as.classList.toggle("empty",hasBow&&arrows<=0);
-  document.getElementById("arrowCount").textContent=arrows;
-  const bs=document.getElementById("bombStat");
-  bs.classList.toggle("hidden",!hasBombs);
-  bs.classList.toggle("empty",hasBombs&&bombCount<=0);
-  document.getElementById("bombCount").textContent=bombCount;
   const ks=document.getElementById("keyStat");
   ks.classList.toggle("hidden",!(inDungeon&&smallKeys>0));
   document.getElementById("keyCount").textContent=smallKeys;
-  const ib=document.getElementById("itemBtn");
-  if(equippedItem==="boom"){ ib.textContent="🪃"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: boomerang"); }
-  else if(equippedItem==="bow"){ ib.textContent="🏹"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: bow"); }
-  else if(equippedItem==="bombs"){ ib.textContent="💣"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: bombs"); }
-  else { ib.textContent="—"; ib.classList.add("none"); ib.setAttribute("aria-label","Use equipped item (none equipped)"); }
+  const ib=document.getElementById("itemBtn"), ic=document.getElementById("itemIcon"), badge=document.getElementById("itemCount");
+  // Consumable counts are baked into the ITEM button itself: arrows when the
+  // bow is equipped, bombs when bombs are equipped (you can't use either
+  // unless it's equipped, so the count lives where the use happens). The
+  // boomerang has no consumable count, so its badge stays hidden. The badge
+  // turns red at zero, like the old HUD counter pills did.
+  let badgeText=null, badgeZero=false;
+  if(equippedItem==="bow"){ badgeText=String(arrows); badgeZero=arrows<=0; }
+  else if(equippedItem==="bombs"){ badgeText=String(bombCount); badgeZero=bombCount<=0; }
+  if(badgeText===null) badge.classList.add("hidden");
+  else { badge.classList.remove("hidden"); badge.textContent=badgeText; badge.classList.toggle("zero",badgeZero); }
+  if(equippedItem==="boom"){ ic.textContent="🪃"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: boomerang"); }
+  else if(equippedItem==="bow"){ ic.textContent="🏹"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: bow"); }
+  else if(equippedItem==="bombs"){ ic.textContent="💣"; ib.classList.remove("none"); ib.setAttribute("aria-label","Use equipped item: bombs"); }
+  else { ic.textContent="—"; ib.classList.add("none"); ib.setAttribute("aria-label","Use equipped item (none equipped)"); }
   if(bagOpen) renderBag();
 }
 updateHearts(); updateInv();
@@ -1261,7 +1266,8 @@ function loadRoom(id,fromSide){
   enemies=[];
   if(def.boss){
     if(!dState.bossDead){
-      const k=makeEnemy(9,5,"king"); k.r=30; k.kbMul=0.2; k.isKing=true; k.spawnT=3;
+      const k=makeEnemy(9,5,"king"); k.r=30; k.kbMul=0.2; k.isKing=true; k.spawnT=3; k.hops=0;
+      k.contactR=24; // damaging core ≈70% of the 34px drawn body radius — standing at the sprite's edge is safe
       enemies.push(k); dRoom.kingRef=k;
       if(!dState.flags.bossSeen){ dState.flags.bossSeen=true; showToast("👑 King Slime blocks the way!"); }
     } else if(!dState.heartTaken){
@@ -1404,7 +1410,7 @@ function updateDungeon(dt){
         }
       }
     }
-    if(Math.hypot(player.x-en.x,player.y-en.y)<en.r+13 && player.invuln<=0 && player.hp>0){
+    if(Math.hypot(player.x-en.x,player.y-en.y)<(en.contactR||en.r)+13 && player.invuln<=0 && player.hp>0){
       player.hp--; player.invuln=1.0; updateHearts(); sfx.hurt();
       const kb=Math.atan2(player.y-en.y, player.x-en.x); tryMovePlayer(Math.cos(kb)*26, Math.sin(kb)*26, collidesDungeonAt);
       burst(player.x,player.y,"#f87171",10); showToast("Ouch! −½ heart");
@@ -1613,6 +1619,14 @@ function drawDungeon(){
   const t=performance.now()/1000;
   drawDungeonRoom(camX,camY,t);
   pickups.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(sx<-30||sy<-30||sx>W+30||sy>H+30) return; if(p.life<3 && p.life>0 && Math.floor(t*8)%2===0) return;
+    // Dungeon-only lift: the glyph below is drawn exactly as in the overworld
+    // (same font, full opacity) — but the cavern floor is near-black slate, so
+    // a warm halo and a soft shadow are laid down first to separate the pickup
+    // from the floor. Overworld pickup drawing is unchanged.
+    const halo=ctx.createRadialGradient(sx,sy,2,sx,sy,22);
+    halo.addColorStop(0,"rgba(255,238,180,.38)"); halo.addColorStop(1,"rgba(255,238,180,0)");
+    ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(sx,sy,22,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(0,0,0,.4)"; ctx.beginPath(); ctx.ellipse(sx,sy+10,10,3.6,0,0,Math.PI*2); ctx.fill();
     if(p.type==="rupee") drawRupee(sx,sy,p.value,t);
     else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); }
     else if(p.type==="bombs"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+6+Math.sin(t*4+p.x)*2); }
@@ -1727,15 +1741,26 @@ function updateEnemyPattern(en,dt,dist){
     } else { // knocked into pause/recover etc. — resume the cycle
       if(en.stateT<=0){ en.state="pause"; en.stateT=0.3; }
     }
-  } else if(en.type==="king"){ // King Slime: slow, heavy hops straight at the player
+  } else if(en.type==="king"){ // King Slime: a readable rhythm — three telegraphed hops at the
+    // player, then a settled REST of about a second where it does not move. The rest is the
+    // sword window: its damaging core (contactR 24) + the player's hurt radius (13) is 37,
+    // well inside sword reach (TUNING.swordReach 64), a +27 margin.
     if(en.state==="hop"){
       tryMove(en, en.pDirX*185*sm*dt, en.pDirY*185*sm*dt, en.r);
-      if(en.stateT<=0){ en.state="pause"; en.stateT=rand(.5,.85); }
-    } else {
       if(en.stateT<=0){
-        const a = en.aggro ? Math.atan2(player.y-en.y,player.x-en.x)+rand(-.25,.25) : rand(0,Math.PI*2);
-        en.pDirX=Math.cos(a); en.pDirY=Math.sin(a); en.state="hop"; en.stateT=0.34;
+        en.hops=(en.hops||0)+1;
+        if(en.hops>=3){ en.hops=0; en.state="rest"; en.stateT=1.05; }
+        else { en.state="windup"; en.stateT=0.28; }
       }
+    } else if(en.state==="windup"){ // telegraph: squashes down (see drawEnemy), does not move
+      if(en.stateT<=0){ // the hop's direction is locked in at launch — no steering mid-hop
+        const a = en.aggro ? Math.atan2(player.y-en.y,player.x-en.x)+rand(-.2,.2) : rand(0,Math.PI*2);
+        en.pDirX=Math.cos(a); en.pDirY=Math.sin(a); en.state="hop"; en.stateT=0.32;
+      }
+    } else if(en.state==="rest"){ // settled and still — hit it now
+      if(en.stateT<=0){ en.state="windup"; en.stateT=0.28; }
+    } else { // spawn pause / anything else: settle briefly, then begin the cycle
+      if(en.stateT<=0){ en.state="windup"; en.stateT=0.28; }
     }
   } else { // Lake Hylia blue: quick darts between short pauses
     if(en.state==="dart"){
@@ -1993,7 +2018,13 @@ function drawEnemy(en,camX,camY){
   else if(TUNING.showAggroRings){ ctx.strokeStyle="rgba(255,255,255,.25)"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,effAggro,0,Math.PI*2); ctx.stroke(); }
   const cols=ENEMY_COLORS[en.type];
   if(en.type==="king"){ // King Slime: a much larger crowned slime
-    ctx.save(); ctx.translate(sx,sy); ctx.scale(1,squash);
+    // Pattern tells in the body itself: a deep squash winds up each hop, a
+    // stretched body mid-hop, and a settled squash while it rests.
+    let ksy=squash, ksx=1;
+    if(en.state==="windup"){ ksy=0.74; ksx=1.14; }
+    else if(en.state==="rest"){ ksy=0.8; ksx=1.1; }
+    else if(en.state==="hop"){ ksy=1.08; ksx=0.94; }
+    ctx.save(); ctx.translate(sx,sy); ctx.scale(ksx,ksy);
     ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(0,26,31,8,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=en.flash>0?"#ff2e63":cols[0]; ctx.beginPath(); ctx.ellipse(0,4,34,27,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=cols[1]; ctx.beginPath(); ctx.ellipse(0,13,34,18,0,0,Math.PI); ctx.fill();
@@ -2006,6 +2037,7 @@ function drawEnemy(en,camX,camY){
     if(tallAt(en.x,en.y+8)) drawWading(sx,sy,performance.now()/1000+en.wob);
     if(en.stunT>0){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💫",sx,sy-52); }
     else if(en.hp<en.maxHp){ ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(sx-31,sy-52,62,6); ctx.fillStyle="#ff4757"; ctx.fillRect(sx-30,sy-51,60*(en.hp/en.maxHp),4); }
+    if(en.state==="rest"&&en.stunT<=0){ ctx.font="16px serif"; ctx.textAlign="center"; ctx.fillText("💤",sx+32,sy-40); }
     if(en.aggro&&en.stunT<=0){ ctx.fillStyle="#ffdf6b"; ctx.font="900 20px system-ui"; ctx.textAlign="center"; ctx.fillText("!",sx,sy-56); }
     return;
   }
