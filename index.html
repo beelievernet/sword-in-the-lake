@@ -1217,13 +1217,20 @@ function buildRoomTiles(){
   dRoom.crackTiles=[]; dRoom.doorTiles={};
   Object.keys(sideTiles).forEach(side=>{
     const t=def.doors[side]; if(!t) return;
-    let open=false;
+    let open=false, blownOpen=false;
     if(t==="open"||t==="exit") open=true;
     else if(t==="locked") open=dState.lockedOpen;
-    else if(t==="crack"){ open=!!dState.cracks[def.crackIds[side]];
+    else if(t==="crack"){ open=!!dState.cracks[def.crackIds[side]]; blownOpen=open;
       if(!open) sideTiles[side].forEach(([tx,ty])=>dRoom.crackTiles.push({tx,ty,id:def.crackIds[side]})); }
     else if(t==="shutter") open=!!dState.cleared[id];
-    if(dRoom.sealed) open=false;
+    // A blown-open crack is a hole in the wall, not a door: the room seal
+    // must never slam it shut. (Bug, found by playtest: bombing the west
+    // room's cracked wall while that shutter room was sealed set the crack
+    // flag — so the fractures vanished and the wall stopped being bombable —
+    // but this override kept the tiles solid, leaving a plain unbombable
+    // wall where the passage should have opened. The same override also
+    // re-shut an already-opened crack whenever its room re-sealed.)
+    if(dRoom.sealed&&!blownOpen) open=false;
     dRoom.doorTiles[side]={tiles:sideTiles[side], state:open?"open":t};
     if(open){
       sideTiles[side].forEach(([tx,ty])=>{ solid[ty+1][tx+1]=false; gapTiles.add(tx+","+ty); });
