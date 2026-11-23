@@ -142,7 +142,7 @@
         <div class="how">
           <div><b>📱 On phone</b><br>Touch anywhere on the left side — a floating stick appears under your thumb. Gold button swings the sword; the round ITEM button uses whatever you've equipped from your bag.</div>
           <div><b>🎯 Free-angle attacks</b><br>You attack at the exact angle you're moving — diagonals and everything in between, not just up/down/left/right. Stop moving and you keep facing that angle, so you can line up a swing, boomerang, or arrow and fire standing still.</div>
-          <div><b>🧭 Direction indicator</b><br>A small gold arrow at your feet always points where you're aiming. Your sprite only faces 4 ways, so trust the arrow — it's your true aim for sword, items, and shield.</div>
+          <div><b>🧭 Direction indicator</b><br>A small gold arrow circles you, always pointing where you're aiming — it stays visible even when you aim straight up. Your sprite only faces 4 ways, so trust the arrow — it's your true aim for sword, items, and shield.</div>
           <div><b>🛡️ Your shield</b><br>Always equipped, no button to hold. It <b>only blocks ranged rocks</b> coming at you from the front — inside the cone you're aiming toward. Rocks from the side or behind still hit, and it never blocks bumping into an enemy. During <b>any attack</b> it drops entirely: your shield swings out to your side while you swing the sword, throw the boomerang, or shoot the bow, so a frontal rock gets through until that attack ends.</div>
           <div><b>⌨️ On desktop</b><br>WASD / arrows (hold two keys for a diagonal aim), <b>Space</b> sword, <b>K</b> use equipped item, <b>L</b> bag, <b>E</b> shop.</div>
           <div><b>🏪 The Shop</b><br>In town (gold roof). Walk up to the door and tap <b>Enter Shop</b>: boomerang 💎60, bow 💎120, arrows, even an extra heart.</div>
@@ -1165,7 +1165,7 @@ function explodeBomb(b){
 function drawBombsFx(camX,camY,t){
   liveBombs.forEach(b=>{ const sx=b.x-camX, sy=b.y-camY; const urg=b.t/b.fuse;
     if(urg>0.68 && Math.floor(t*11)%2===0){ ctx.fillStyle="rgba(255,71,87,.5)"; ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.fill(); }
-    ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+7);
+    ctx.fillStyle="#fff"; ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+7);
   });
   explosions.forEach(e=>{ const k=e.t/e.life, sx=e.x-camX, sy=e.y-camY; ctx.globalAlpha=1-k;
     ctx.fillStyle="#fb923c"; ctx.beginPath(); ctx.arc(sx,sy,e.r*(0.35+0.65*k),0,Math.PI*2); ctx.fill();
@@ -1627,6 +1627,13 @@ function drawDungeon(){
     halo.addColorStop(0,"rgba(255,238,180,.38)"); halo.addColorStop(1,"rgba(255,238,180,0)");
     ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(sx,sy,22,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="rgba(0,0,0,.4)"; ctx.beginPath(); ctx.ellipse(sx,sy+10,10,3.6,0,0,Math.PI*2); ctx.fill();
+    // Pin an OPAQUE fillStyle before any emoji glyph: a colour-emoji glyph is
+    // modulated by the alpha of the fillStyle current at the fillText call
+    // (Skia behaviour, verified in rendered pixels), so the translucent shadow
+    // above — or any translucent fill left over from earlier drawing — would
+    // mute the glyph even at globalAlpha 1. The halo and shadow stay; the
+    // glyph itself must not inherit their alpha.
+    ctx.fillStyle="#fff";
     if(p.type==="rupee") drawRupee(sx,sy,p.value,t);
     else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); }
     else if(p.type==="bombs"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+6+Math.sin(t*4+p.x)*2); }
@@ -1644,7 +1651,7 @@ function drawDungeon(){
     ctx.strokeStyle="#0ff"; ctx.strokeRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
     ctx.fillStyle="rgba(0,255,255,.18)"; ctx.fillRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
   }
-  projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
+  projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.fillStyle="#fff"; ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
   eProjectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+5,6,2.5,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#78716c"; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#a8a29e"; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#57534e"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke(); });
   drawBombsFx(camX,camY,t);
   particles.forEach(p=>{ ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x-camX,p.y-camY,p.size,p.size); }); ctx.globalAlpha=1;
@@ -2088,19 +2095,14 @@ function drawNPC(n,camX,camY){
     ctx.fillStyle="#1c2b1c"; ctx.textAlign="center"; ctx.fillText(n.line,sx,sy-38);
   }
 }
+// Aim arrow placement: the arrow ORBITS the player's centre at the aim
+// angle, on a circle whose radius clears the body in every direction (the
+// sprite spans x ±13, y −24..+20 around the centre). The old feet-anchored
+// arrow pointed up straight into the body and was painted over by it.
+const AIM_ARROW_ORBIT=27;
+function aimArrowPos(sx,sy){ return {x:sx+Math.cos(player.aim)*AIM_ARROW_ORBIT, y:sy+Math.sin(player.aim)*AIM_ARROW_ORBIT}; }
 function drawPlayer(camX,camY,time){
   const sx=player.x-camX, sy=player.y-camY;
-  // Direction indicator: a small gold arrow on the ground at the player's feet,
-  // always pointing along the true aim angle (the sprite itself only faces 4 ways).
-  // Drawn first so it sits under the body, subtle but always visible in gameplay.
-  if(started && player.hp>0){
-    ctx.save(); ctx.translate(sx,sy+16); ctx.rotate(player.aim);
-    ctx.fillStyle="rgba(0,0,0,.35)"; ctx.beginPath(); ctx.moveTo(24,0); ctx.lineTo(13,-6); ctx.lineTo(13,6); ctx.closePath(); ctx.fill();
-    ctx.fillStyle="#f6c453"; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(23,0); ctx.lineTo(12.5,-5.5); ctx.lineTo(12.5,5.5); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle="rgba(246,196,83,.55)"; ctx.fillRect(4,-1.5,8,3);
-    ctx.restore();
-  }
   if(player.invuln>0 && Math.floor(time*14)%2===0) ctx.globalAlpha=.45;
   ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+14,13,5,0,0,Math.PI*2); ctx.fill();
   if(player.attackT>0){
@@ -2133,6 +2135,20 @@ function drawPlayer(camX,camY,time){
   }
   ctx.globalAlpha=1;
   if(tallAt(player.x,player.y+8)) drawWading(sx,sy,time);
+  // Direction indicator: the same small gold arrow as before, but orbiting
+  // the player's centre at the aim angle (see aimArrowPos) and drawn LAST —
+  // on top of the body — so it stays visible at every aim angle, including
+  // straight up. The sprite itself only faces 4 ways; the arrow is the true
+  // aim for sword, items, and shield.
+  if(started && player.hp>0){
+    const ap=aimArrowPos(sx,sy);
+    ctx.save(); ctx.translate(ap.x,ap.y); ctx.rotate(player.aim);
+    ctx.fillStyle="rgba(0,0,0,.35)"; ctx.beginPath(); ctx.moveTo(10,1); ctx.lineTo(-1,-4.5); ctx.lineTo(-1,6.5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#f6c453"; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(9,0); ctx.lineTo(-2,-5.5); ctx.lineTo(-2,5.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="rgba(246,196,83,.55)"; ctx.fillRect(-8,-1.5,6,3);
+    ctx.restore();
+  }
 }
 function draw(){
   const camX=Math.max(0,Math.min(WORLD_W-W, player.x-W/2));
@@ -2143,7 +2159,7 @@ function draw(){
   buildings.forEach(b=>drawBuilding(b,camX,camY));
   drawGrassTufts(camX,camY,t);
   drawTallBack(camX,camY,t);
-  pickups.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(sx<-30||sy<-30||sx>W+30||sy>H+30) return; if(p.life<3 && Math.floor(t*8)%2===0) return; if(p.type==="rupee") drawRupee(sx,sy,p.value,t); else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); } else if(p.type==="bombs"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+6+Math.sin(t*4+p.x)*2); } else { ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("❤️",sx,sy+7+Math.sin(t*4+p.x)*2); } });
+  pickups.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(sx<-30||sy<-30||sx>W+30||sy>H+30) return; if(p.life<3 && Math.floor(t*8)%2===0) return; ctx.fillStyle="#fff"; if(p.type==="rupee") drawRupee(sx,sy,p.value,t); else if(p.type==="arrows"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("🏹",sx,sy+6+Math.sin(t*4+p.x)*2); } else if(p.type==="bombs"){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+6+Math.sin(t*4+p.x)*2); } else { ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("❤️",sx,sy+7+Math.sin(t*4+p.x)*2); } });
   npcs.forEach(n=>drawNPC(n,camX,camY));
   enemies.forEach(en=>drawEnemy(en,camX,camY));
   drawPlayer(camX,camY,t);
@@ -2170,7 +2186,7 @@ function draw(){
     ctx.fillStyle="rgba(0,255,255,.18)"; ctx.fillRect(pf.x-camX,pf.y-camY,pf.w,pf.h);
   }
   drawTallFront(camX,camY,t);
-  projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
+  projectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; if(p.type==="boom"){ ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.spin); ctx.fillStyle="#fff"; ctx.font="22px serif"; ctx.textAlign="center"; ctx.fillText("🪃",0,8); ctx.restore(); } else { ctx.save(); ctx.translate(sx,sy); ctx.rotate(p.ang); ctx.strokeStyle="#d6d3d1"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle="#f6c453"; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill(); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-6,-4); ctx.moveTo(-11,0); ctx.lineTo(-6,4); ctx.stroke(); ctx.restore(); } });
   drawBombsFx(camX,camY,t);
   eProjectiles.forEach(p=>{ const sx=p.x-camX, sy=p.y-camY; ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(sx,sy+5,6,2.5,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#78716c"; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#a8a29e"; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#57534e"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke(); });
   particles.forEach(p=>{ ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x-camX,p.y-camY,p.size,p.size); }); ctx.globalAlpha=1;
