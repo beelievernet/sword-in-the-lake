@@ -1162,10 +1162,35 @@ function explodeBomb(b){
     cutGrassAt(b.x,b.y,R);
   }
 }
+// A warm pool of light on the floor around a bomb or bomb bundle. The
+// bomb glyph itself is near-black by design, so on the cavern's dark
+// slate a placed bomb was a black ball on a near-black floor — an
+// inherent contrast problem that full opacity (v16) could not fix. The
+// pool is what the eye finds: large, warm, and gently breathing so a
+// live bomb draws attention without flashing. On bright overworld
+// ground the same pool reads as a faint warm tint and changes little.
+function drawBombLightPool(sx,sy,t,seed){
+  const pulse=1+0.08*Math.sin(t*4.2+seed);
+  const R=36*pulse;
+  const g=ctx.createRadialGradient(sx,sy+3,2,sx,sy+3,R);
+  g.addColorStop(0,"rgba(255,196,96,.62)");
+  g.addColorStop(0.55,"rgba(255,158,58,.32)");
+  g.addColorStop(1,"rgba(255,140,40,0)");
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy+3,R,0,Math.PI*2); ctx.fill();
+}
 function drawBombsFx(camX,camY,t){
   liveBombs.forEach(b=>{ const sx=b.x-camX, sy=b.y-camY; const urg=b.t/b.fuse;
+    drawBombLightPool(sx,sy,t,b.x*0.7+b.y);
     if(urg>0.68 && Math.floor(t*11)%2===0){ ctx.fillStyle="rgba(255,71,87,.5)"; ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.fill(); }
     ctx.fillStyle="#fff"; ctx.font="20px serif"; ctx.textAlign="center"; ctx.fillText("💣",sx,sy+7);
+    // Fuse spark, drawn bigger and brighter than the glyph's own spark:
+    // a hot core with a warm halo and a flickering cross at the fuse tip,
+    // growing as the fuse burns down, so the eye lands on the live bomb.
+    const fx=sx+7, fy=sy-8, fl=0.75+0.45*Math.sin(t*31+b.x)+urg*0.5;
+    const sg=ctx.createRadialGradient(fx,fy,0.5,fx,fy,7*fl+3);
+    sg.addColorStop(0,"rgba(255,240,190,.95)"); sg.addColorStop(0.4,"rgba(255,170,60,.55)"); sg.addColorStop(1,"rgba(255,140,40,0)");
+    ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(fx,fy,7*fl+3,0,Math.PI*2); ctx.fill();
+    drawSparkle(fx,fy,(4.5+urg*3.5)*fl,0.9);
   });
   explosions.forEach(e=>{ const k=e.t/e.life, sx=e.x-camX, sy=e.y-camY; ctx.globalAlpha=1-k;
     ctx.fillStyle="#fb923c"; ctx.beginPath(); ctx.arc(sx,sy,e.r*(0.35+0.65*k),0,Math.PI*2); ctx.fill();
@@ -1627,6 +1652,10 @@ function drawDungeon(){
     halo.addColorStop(0,"rgba(255,238,180,.38)"); halo.addColorStop(1,"rgba(255,238,180,0)");
     ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(sx,sy,22,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="rgba(0,0,0,.4)"; ctx.beginPath(); ctx.ellipse(sx,sy+10,10,3.6,0,0,Math.PI*2); ctx.fill();
+    // A bomb bundle gets the placed bomb's full light pool on top of the
+    // generic halo: its glyph is the same near-black ball, so it needs
+    // the same floor contrast to read at a glance down here.
+    if(p.type==="bombs") drawBombLightPool(sx,sy,t,p.x);
     // Pin an OPAQUE fillStyle before any emoji glyph: a colour-emoji glyph is
     // modulated by the alpha of the fillStyle current at the fillText call
     // (Skia behaviour, verified in rendered pixels), so the translucent shadow
@@ -2207,7 +2236,18 @@ function draw(){
 }
 function loop(ts){
   const dt=Math.min(0.033,(ts-lastTime)/1000||0.016); lastTime=ts;
-  if(inDungeon){ updateDungeon(dt); drawDungeon(); } else { update(dt); draw(); }
+  if(inDungeon) updateDungeon(dt); else update(dt);
+  // Draw the state the update LEFT BEHIND, not the state it started in.
+  // Entering and leaving the dungeon both happen inside the update (the
+  // cave mouth in update(); the room exits and the boss warp in
+  // updateDungeon(), via exitDungeon()). Branching on the pre-update
+  // mode ran drawDungeon() on the exit frame with dRoom already null:
+  // it filled the whole screen with the near-black dungeon background,
+  // threw on dRoom.def, and requestAnimationFrame was never reached —
+  // the loop died on that black frame and the player was stuck on a
+  // black screen they could not leave. Re-checking after the update
+  // makes the draw always match the world the update produced.
+  if(inDungeon) drawDungeon(); else draw();
   requestAnimationFrame(loop);
 }
 resize(); requestAnimationFrame(loop);
