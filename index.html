@@ -108,6 +108,11 @@
   .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .btnrow button{flex:1;min-width:100px;background:#1e3d27;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:11px 10px;font-weight:800;cursor:pointer;font-size:13.5px}
   .btnrow button.gold{background:var(--gold);color:#1a1400;border:0}
+  /* Testing section (tuning panel only — playtest shortcuts, not gameplay) */
+  .test-sec{margin-top:18px;border:2px dashed rgba(246,196,83,.55);border-radius:14px;padding:12px;background:rgba(246,196,83,.06);text-align:left}
+  .test-head{font-weight:900;font-size:14px;letter-spacing:.05em;color:var(--gold)}
+  .test-head span{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:0}
+  #testStatus{min-height:18px;font-size:12.5px;color:var(--muted);margin-top:8px;font-weight:600}
   @media (max-width:560px){#minimap{width:96px;height:68px;right:8px;top:8px}}
 </style>
 </head>
@@ -190,6 +195,17 @@
           <button id="tuningDownload">Download</button>
           <button id="tuningImport">Import</button>
           <button id="tuningReset">Reset defaults</button>
+        </div>
+        <div class="test-sec">
+          <div class="test-head">🧪 TESTING <span>— playtest shortcuts, not part of the game</span></div>
+          <div class="btnrow">
+            <button id="testRupees">💎 +500 rupees</button>
+            <button id="testBoom">🪃 Give boomerang</button>
+            <button id="testBow">🏹 Give bow + arrows</button>
+            <button id="testBombs">💣 Give bombs</button>
+            <button id="testHeal">❤️ Full heal</button>
+          </div>
+          <div id="testStatus" aria-live="polite"></div>
         </div>
         <button class="cta" id="tuningClose" style="margin-top:12px">Done — back to the adventure</button>
       </div>
@@ -1077,6 +1093,26 @@ document.getElementById("tuningExport").addEventListener("click",exportTuning);
 document.getElementById("tuningDownload").addEventListener("click",()=>{ const t=document.getElementById("tuningJson").value||JSON.stringify(tuningExportObject(),null,2); document.getElementById("tuningJson").value=t; downloadTuning(t); });
 document.getElementById("tuningImport").addEventListener("click",importTuning);
 document.getElementById("tuningReset").addEventListener("click",()=>{ Object.assign(TUNING,TUNING_DEFAULTS); saveTuning(); buildTuningUI(); showToast("⚙️ Tuning reset to defaults"); sfx.pop(); });
+
+// ---------- Testing grants (tuning panel only — a playtest shortcut, NOT a
+// game feature). Every wipe restarts the game from zero, so these put a
+// tester straight back in. Each grant writes the exact same ownership state
+// buyItem() (shop) and openChest() (dungeon) write, so the HUD, the ITEM
+// button badge, the bag, and the shop's Owned state all agree afterwards —
+// and the shop can never double-charge for a granted item, because its buy
+// buttons key off itemOwned(). Re-granting is harmless: rupees, arrows and
+// bombs still add/top up; boomerang and bow ownership is a no-op. ----------
+function testStatus(msg){ document.getElementById("testStatus").textContent=msg; }
+function testGiveRupees(){ rupeesCount+=500; document.getElementById("rupees").textContent=rupeesCount; sfx.coin(); testStatus("💎 +500 rupees — wallet now holds "+rupeesCount); }
+function testGiveBoomerang(){ if(hasBoomerang){ testStatus("🪃 Boomerang already owned — nothing changed"); return; } hasBoomerang=true; equippedItem="boom"; updateInv(); sfx.buy(); testStatus("🪃 Boomerang granted and equipped to the ITEM button"); }
+function testGiveBow(){ if(!hasBow){ hasBow=true; equippedItem="bow"; } arrows+=30; updateInv(); sfx.buy(); testStatus("🏹 Bow granted — arrows in bag: "+arrows); }
+function testGiveBombs(){ hasBombs=true; bombCount=Math.max(bombCount,Math.max(TUNING.bombStartCount,20)); equippedItem="bombs"; updateInv(); sfx.buy(); testStatus("💣 Bombs granted — count: "+bombCount); }
+function testFullHeal(){ player.hp=player.maxHp; updateHearts(); sfx.coin(); testStatus("❤️ Fully healed — "+(player.maxHp/2)+" hearts"); }
+document.getElementById("testRupees").addEventListener("click",testGiveRupees);
+document.getElementById("testBoom").addEventListener("click",testGiveBoomerang);
+document.getElementById("testBow").addEventListener("click",testGiveBow);
+document.getElementById("testBombs").addEventListener("click",testGiveBombs);
+document.getElementById("testHeal").addEventListener("click",testFullHeal);
 
 function resetGame(){
   if(inDungeon){ inDungeon=false; dRoom=null; dBlock=null; liveBombs=[]; explosions=[]; }
