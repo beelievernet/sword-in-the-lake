@@ -269,13 +269,15 @@ document.getElementById("soundBtn").onclick=function(){ soundOn=!soundOn; this.t
 
 
 // ---------- Tuning (debug menu state — the whole game reads from TUNING) ----------
-const TUNING_DEFAULTS={hitPauseMs:75,knockbackForce:300,enemySpeedMul:1,aggroRangeMul:1,playerSpeed:175,swordCooldownSec:0.32,swordReach:64,tallGrassFactor:0.76,enemyRespawnSec:6,grassRegrowSec:9,boomerangStunSec:2.5,bombFuseSec:1.2,bombRadiusTiles:1.5,bombStartCount:10,bombMax:30,showAggroRings:false,showCollisionBoxes:false};
+const TUNING_DEFAULTS={hitPauseMs:75,knockbackForce:300,bossSwordKnockback:700,bossSwordInvulnSec:0.9,enemySpeedMul:1,aggroRangeMul:1,playerSpeed:175,swordCooldownSec:0.32,swordReach:64,tallGrassFactor:0.76,enemyRespawnSec:6,grassRegrowSec:9,boomerangStunSec:2.5,bombFuseSec:1.2,bombRadiusTiles:1.5,bombStartCount:10,bombMax:30,showAggroRings:false,showCollisionBoxes:false};
 const TUNING=Object.assign({},TUNING_DEFAULTS);
 try{ const saved=JSON.parse(localStorage.getItem("littleLegendTuning")||"null"); if(saved) Object.keys(TUNING_DEFAULTS).forEach(k=>{ if(typeof saved[k]===(typeof TUNING_DEFAULTS[k])) TUNING[k]=saved[k]; }); }catch(e){}
 function saveTuning(){ try{ localStorage.setItem("littleLegendTuning", JSON.stringify(tuningExportObject())); }catch(e){} }
 const TUNE_DEFS=[
   {key:"hitPauseMs",label:"Hit-pause on sword hits",min:0,max:160,step:5,unit:" ms"},
   {key:"knockbackForce",label:"Sword knockback force",min:0,max:650,step:10,unit:""},
+  {key:"bossSwordKnockback",label:"King Slime sword knockback (boss only)",min:0,max:1200,step:10,unit:""},
+  {key:"bossSwordInvulnSec",label:"King Slime post-sword-hit invincibility",min:0,max:2.5,step:0.05,unit:" s"},
   {key:"enemySpeedMul",label:"Enemy speed multiplier",min:0.2,max:2.5,step:0.05,unit:"×"},
   {key:"aggroRangeMul",label:"Aggro range multiplier",min:0.3,max:2.5,step:0.05,unit:"×"},
   {key:"playerSpeed",label:"Player speed",min:80,max:320,step:5,unit:""},
@@ -882,7 +884,34 @@ function hurtEnemy(en,dmg,ang,opts){
   en.hp-=dmg; en.flash=.24;
   if(opts.sword){ en.immuneT=0.4; hitPauseT=Math.max(hitPauseT, TUNING.hitPauseMs/1000); }
   if(opts.stun) en.stunT=Math.max(en.stunT,opts.stun);
-  const kb=((opts.kb!==undefined)?opts.kb:120)*(en.kbMul||1);
+  let kb=((opts.kb!==undefined)?opts.kb:120)*(en.kbMul||1);
+  // SWORD hits on the King Slime only: exaggerated knockback. Measured from the
+  // pattern code, one boss hop carries it 185 px/s × 0.32 s ≈ 59 px, while the
+  // generic sword force (300 × the King's kbMul 0.2 = 60 px/s into a slide that
+  // decays at exp(-7/s) and stops below 14 px/s) moved it only ≈ (60-14)/7 ≈
+  // 6.6 px — a landed hit bought no space. TUNING.bossSwordKnockback is the
+  // slide's initial velocity with kbMul bypassed: at the 700 default the same
+  // decay gives ≈ (700-14)/7 ≈ 98 px, about 1.66 hops. Arrow (110),
+  // boomerang (90) and bomb (200) knockback on the boss still take the generic
+  // kbMul path above, unchanged; so do sword hits on every other enemy.
+  if(opts.sword && en.isKing){
+    kb=TUNING.bossSwordKnockback;
+    // INTERRUPT: the hit cancels whatever the King was doing — mid-hop,
+    // wind-up or rest — and resets the pattern, so once the slide ends he
+    // restarts the rhythm from the top (wind-up, then the hop sequence),
+    // not from wherever he was. (The slide itself still runs first: the
+    // pattern is not ticked while knockback is active.)
+    en.hops=0; en.state="windup"; en.stateT=0.28;
+    // ANTI-STUNLOCK: a longer post-hit sword immunity than the generic
+    // 0.4 s every enemy gets (the immuneT set above — the same mechanism,
+    // boss-sized). TUNING.bossSwordInvulnSec covers the ~0.56 s slide plus
+    // a short beat, and has long expired before the restarted cycle reaches
+    // its next rest (0.28 wind-up + 3 x (0.32 hop + 0.28 wind-up) ≈ 2.1 s
+    // after the slide), so the next rest window always offers a hittable
+    // boss. Sword-only by construction: immuneT is only ever consulted for
+    // sword hits — arrows, the boomerang and bombs ignore it entirely.
+    en.immuneT=Math.max(en.immuneT, TUNING.bossSwordInvulnSec);
+  }
   if(kb>0){ // decaying knockback slide; interrupts whatever pattern state the enemy was in
     en.kbX=Math.cos(ang)*kb; en.kbY=Math.sin(ang)*kb;
     if(!en.isKing){ // the King Slime keeps its hop/rest clock running through hits — that rhythm is the fight
@@ -2104,6 +2133,11 @@ function drawEnemy(en,camX,camY){
     else if(en.state==="rest"){ ksy=0.8; ksx=1.1; }
     else if(en.state==="hop"){ ksy=1.08; ksx=0.94; }
     ctx.save(); ctx.translate(sx,sy); ctx.scale(ksx,ksy);
+    // Post-sword-hit invincibility tell: the same flicker the player gets
+    // while invulnerable (see drawPlayer), so a swing that fails to land
+    // during the window reads as "untouchable right now", not as a miss.
+    // (Inside the save/restore, so the alpha never leaks into other draws.)
+    if(en.immuneT>0 && Math.floor(performance.now()/70)%2===0) ctx.globalAlpha=.45;
     ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(0,26,31,8,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=en.flash>0?"#ff2e63":cols[0]; ctx.beginPath(); ctx.ellipse(0,4,34,27,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=cols[1]; ctx.beginPath(); ctx.ellipse(0,13,34,18,0,0,Math.PI); ctx.fill();
@@ -2114,9 +2148,17 @@ function drawEnemy(en,camX,camY){
     ctx.font="27px serif"; ctx.textAlign="center"; ctx.fillText("👑",0,-22);
     ctx.restore();
     if(tallAt(en.x,en.y+8)) drawWading(sx,sy,performance.now()/1000+en.wob);
-    if(en.stunT>0){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillText("💫",sx,sy-52); }
+    // Over-head markers (💫 / 💤 here, 💫 in the other branches below): pin an
+    // OPAQUE fillStyle before the glyph, exactly as the dungeon pickups do.
+    // These fillText calls set no fillStyle of their own, so the glyph was
+    // modulated by whatever fill the room/floor drawing left current — in
+    // the cavern that is routinely a translucent rgba (block highlight, chest
+    // shadow, torch glow), which rendered the markers faded in the dungeon
+    // while the overworld's opaque leftovers hid the bug. (The "!" tell
+    // below already pins its own opaque colour and was never affected.)
+    if(en.stunT>0){ ctx.font="17px serif"; ctx.textAlign="center"; ctx.fillStyle="#fff"; ctx.fillText("💫",sx,sy-52); }
     else if(en.hp<en.maxHp){ ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(sx-31,sy-52,62,6); ctx.fillStyle="#ff4757"; ctx.fillRect(sx-30,sy-51,60*(en.hp/en.maxHp),4); }
-    if(en.state==="rest"&&en.stunT<=0){ ctx.font="16px serif"; ctx.textAlign="center"; ctx.fillText("💤",sx+32,sy-40); }
+    if(en.state==="rest"&&en.stunT<=0){ ctx.font="16px serif"; ctx.textAlign="center"; ctx.fillStyle="#fff"; ctx.fillText("💤",sx+32,sy-40); }
     if(en.aggro&&en.stunT<=0){ ctx.fillStyle="#ffdf6b"; ctx.font="900 20px system-ui"; ctx.textAlign="center"; ctx.fillText("!",sx,sy-56); }
     return;
   }
@@ -2136,7 +2178,7 @@ function drawEnemy(en,camX,camY){
     ctx.fillStyle="#451a03"; ctx.beginPath(); ctx.arc(fx*16,fy*11+2,2.4,0,Math.PI*2); ctx.fill();
     ctx.restore();
     if(tallAt(en.x,en.y+8)) drawWading(sx,sy,performance.now()/1000+en.wob);
-    if(en.stunT>0){ ctx.font="15px serif"; ctx.textAlign="center"; ctx.fillText("💫",sx,sy-26); }
+    if(en.stunT>0){ ctx.font="15px serif"; ctx.textAlign="center"; ctx.fillStyle="#fff"; ctx.fillText("💫",sx,sy-26); } // opaque fill pinned: see the King Slime branch
     else if(en.hp<en.maxHp){ ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(sx-16,sy-26,32,5); ctx.fillStyle="#ff4757"; ctx.fillRect(sx-15,sy-25,30*(en.hp/en.maxHp),3); }
     if(en.aggro&&en.stunT<=0){ ctx.fillStyle="#ffdf6b"; ctx.font="900 18px system-ui"; ctx.textAlign="center"; ctx.fillText("!",sx,sy-30); }
     return;
@@ -2149,7 +2191,7 @@ function drawEnemy(en,camX,camY){
   if(en.aggro) { ctx.fillStyle="#111"; ctx.fillRect(-8,5,16,2); }
   ctx.restore();
   if(tallAt(en.x,en.y+8)) drawWading(sx,sy,performance.now()/1000+en.wob);
-  if(en.stunT>0){ ctx.font="15px serif"; ctx.textAlign="center"; ctx.fillText("💫",sx,sy-26); }
+  if(en.stunT>0){ ctx.font="15px serif"; ctx.textAlign="center"; ctx.fillStyle="#fff"; ctx.fillText("💫",sx,sy-26); } // opaque fill pinned: see the King Slime branch
   else if(en.hp<en.maxHp){ ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(sx-16,sy-26,32,5); ctx.fillStyle="#ff4757"; ctx.fillRect(sx-15,sy-25,30*(en.hp/en.maxHp),3); }
   if(en.aggro&&en.stunT<=0){ ctx.fillStyle="#ffdf6b"; ctx.font="900 18px system-ui"; ctx.textAlign="center"; ctx.fillText("!",sx,sy-30); }
 }
